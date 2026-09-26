@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.generated/
+.wrangler/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.tar.gz
+
+.local/

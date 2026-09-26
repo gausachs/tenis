@@ -1,0 +1,19 @@
+{
+  "name": "tenis-fate",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "node scripts/generate-engine.mjs",
+    "dev": "npm run generate && vite --host 127.0.0.1",
+    "build": "npm run generate && vite build",
+    "db:generate": "drizzle-kit generate",
+    "test": "npm run generate && node --test tests/*.test.mjs"
+  },
+  "devDependencies": {
+    "@openai/sites-vite-plugin": "0.2.0",
+    "drizzle-kit": "^0.31.0",
+    "drizzle-orm": "^0.44.0",
+    "vite": "^8.0.0"
+  }
+}

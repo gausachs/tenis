@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Camp de tenis</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <h1>Camp de tenis</h1>
+      <p>Arrossega amb el ratolí. Els tenistes no poden sortir del seu mig camp.</p>
+
+      <div class="layout">
+        <div class="play-area">
+          <section id="court" class="court" aria-label="Camp de tenis">
+            <div class="net" aria-hidden="true"></div>
+
+            <div class="zone-lines left" aria-hidden="true"></div>
+            <div class="zone-lines right" aria-hidden="true"></div>
+
+            <div class="draggable player player-left" data-type="player" data-side="left" style="left: 10%; top: 24%;" aria-label="Tenista esquerra" title="Tenista esquerra">🏃</div>
+            <div class="draggable player player-right" data-type="player" data-side="right" style="left: 90%; top: 76%;" aria-label="Tenista dreta" title="Tenista dreta">🏃</div>
+
+            <div id="ball" class="draggable ball" data-type="ball" style="left: 16%; top: 50%;" aria-label="Pilota numerada" title="Pilota numerada (clic +, clic dret -)">
+              <span id="ball-value">1</span>
+            </div>
+
+
+          </section>
+
+          <section class="player-cards" aria-label="Fitxes dels tenistes">
+            <article class="player-card left-card" data-player="left">
+              <h2>Fitxa Esquerra</h2>
+              <label>Nom
+                <input type="text" id="name-left" value="Ferran" />
+              </label>
+              <label class="stat-row" data-stat-name="Saque">Saque
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="3" />
+                <button class="hit-btn" type="button">Colpejar</button>
+              </label>
+              <label class="stat-row" data-stat-name="Fons de pista">Fons de pista
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="3" />
+                <button class="hit-btn" type="button">Colpejar</button>
+              </label>
+              <label class="stat-row" data-stat-name="Mig camp">Mig camp
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="3" />
+                <button class="hit-btn" type="button">Colpejar</button>
+              </label>
+              <label class="stat-row" data-stat-name="Xarxa">Xarxa
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="3" />
+                <button class="hit-btn" type="button">Colpejar</button>
+              </label>
+              <label class="stat-row" data-stat-name="Voleia">Voleia
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="3" />
+                <button class="hit-btn" type="button">Colpejar</button>
+              </label>
+              <label>Energia
+                <input class="energy-input" type="number" step="1" value="20" />
+              </label>
+              <label>Energia Max
+                <input class="stat-max" type="text" value="20" readonly />
+              </label>
+              <label>Factor recuperació
+                <input class="recovery-factor" type="text" value="0.25" readonly />
+              </label>
+              <p class="hit-result">Tirada: pendent</p>
+              <div class="hit-adjust hidden">
+                <p class="adjust-info">Pots retirar daus '-' gastant energia.</p>
+                <button class="remove-minus-btn" type="button">Treure un '-' (-1 energia)</button>
+              </div>
+            </article>
+
+            <article class="player-card right-card" data-player="right">
+              <h2>Fitxa Dreta</h2>
+              <label>Nom
+                <input type="text" id="name-right" value="Joan Albert" />
+              </label>
+              <label class="stat-row" data-stat-name="Saque">Saque
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="3" />
+                <button class="hit-btn" type="button">Colpejar</button>
+              </label>
+              <label class="stat-row" data-stat-name="Fons de pista">Fons de pista
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="3" />
+                <button class="hit-btn" type="button">Colpejar</button>
+              </label>
+              <label class="stat-row" data-stat-name="Mig camp">Mig camp
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="3" />
+                <button class="hit-btn" type="button">Colpejar</button>
+              </label>
+              <label class="stat-row" data-stat-name="Xarxa">Xarxa
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="3" />
+                <button class="hit-btn" type="button">Colpejar</button>
+              </label>
+              <label class="stat-row" data-stat-name="Voleia">Voleia
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="3" />
+                <button class="hit-btn" type="button">Colpejar</button>
+              </label>
+              <label>Energia
+                <input class="energy-input" type="number" step="1" value="20" />
+              </label>
+              <label>Energia Max
+                <input class="stat-max" type="text" value="20" readonly />
+              </label>
+              <label>Factor recuperació
+                <input class="recovery-factor" type="text" value="0.25" readonly />
+              </label>
+              <p class="hit-result">Tirada: pendent</p>
+              <div class="hit-adjust hidden">
+                <p class="adjust-info">Pots retirar daus '-' gastant energia.</p>
+                <button class="remove-minus-btn" type="button">Treure un '-' (-1 energia)</button>
+              </div>
+            </article>
+          </section>
+        </div>
+
+        <aside class="hit-panel" aria-label="Resultat del colpeig">
+          <h2>Resultat colpeig</h2>
+          <p id="hit-panel-player" class="hit-panel-player">—</p>
+          <p id="hit-panel-stat" class="hit-panel-stat">Tirada: pendent</p>
+          <p id="hit-panel-dice" class="hit-panel-dice">Daus: [ ] [ ] [ ] [ ]</p>
+          <p id="hit-panel-total" class="hit-panel-total">Total: 0</p>
+          <button id="hit-panel-remove" type="button">Treure un '-' (-1 energia)</button>
+          <p id="hit-panel-info" class="hit-panel-info">—</p>
+        </aside>
+
+        <aside class="panel" aria-label="Control del partit">
+          <section class="panel-block">
+            <h2>Daus Fate</h2>
+            <button id="roll-fate" type="button">Llençar 4 daus</button>
+            <p id="fate-dice" class="dice">[ ] [ ] [ ] [ ]</p>
+            <p id="fate-total" class="total">Total: 0</p>
+          </section>
+
+          <section class="panel-block">
+            <h2>Marcador</h2>
+            <div class="score-grid">
+              <span></span>
+              <strong id="score-name-left">Esquerra</strong>
+              <strong id="score-name-right">Dreta</strong>
+
+              <span>Sets</span>
+              <span id="sets-left">0</span>
+              <span id="sets-right">0</span>
+
+              <span>Jocs</span>
+              <span id="games-left">0</span>
+              <span id="games-right">0</span>
+
+              <span>Punts</span>
+              <span id="points-left">0</span>
+              <span id="points-right">0</span>
+            </div>
+            <p id="match-status" class="match-status">Mode: Joc normal</p>
+            <p id="recovery-status" class="recovery-status">Recuperació: pendent (cal acabar un joc o un set)</p>
+            <div class="actions">
+              <button id="point-left" type="button">Punt esquerra</button>
+              <button id="point-right" type="button">Punt dreta</button>
+              <button id="reset-score" type="button" class="ghost">Reinicia marcador</button>
+            </div>
+          </section>
+
+          <section class="panel-block">
+            <h2>Saque</h2>
+            <div class="serve-controls" role="group" aria-label="Control de saque">
+              <button id="serve-left" type="button">Serveix esquerra</button>
+              <button id="serve-right" type="button">Serveix dreta</button>
+            </div>
+            <p id="serve-status" class="serve-status">Servei: Esquerra</p>
+          </section>
+
+          <section class="panel-block">
+            <h2>Pilota</h2>
+            <p class="hint">Clic sobre la pilota: +1, clic dret: -1 (de 1 a 6).</p>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

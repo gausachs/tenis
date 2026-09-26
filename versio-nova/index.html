@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Camp de tenis</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <h1>Camp de tenis</h1>
+      <p>El jugador actiu es desplaça fins a la pilota, colpeja i l'envia al camp contrari.</p>
+
+      <section class="online-panel" aria-label="Partida compartida">
+        <div class="online-heading"><strong>Jugar amb altres persones</strong><span id="online-status" role="status">Mode local</span></div>
+        <p id="online-message">Crea una partida i comparteix l’enllaç. Tothom podrà controlar els dos tenistes.</p>
+        <div id="online-lobby" class="online-actions">
+          <button id="create-room" type="button">Crear partida compartida</button>
+          <label>Enllaç o codi de partida <input id="join-room-code" type="text" autocomplete="off" placeholder="Enganxa l’enllaç de la partida" /></label>
+          <button id="join-room" type="button">Entrar</button>
+        </div>
+        <div id="online-room" class="online-actions" hidden>
+          <label>Enllaç per convidar <input id="room-link" type="text" readonly /></label>
+          <button id="copy-room-link" type="button">Copiar enllaç</button>
+          <button id="leave-room" type="button">Sortir de la partida</button>
+        </div>
+      </section>
+
+      <div class="layout">
+        <div class="play-area">
+          <section id="court" class="court" aria-label="Camp de tenis">
+            <div class="net" aria-hidden="true"></div>
+
+            <div class="zone-lines left" aria-hidden="true"></div>
+            <div class="zone-lines right" aria-hidden="true"></div>
+
+            <div class="draggable player player-left" data-type="player" data-side="left" style="left: 10%; top: 24%;" aria-label="Tenista esquerra" title="Tenista esquerra">🏃</div>
+            <div class="draggable player player-right" data-type="player" data-side="right" style="left: 90%; top: 76%;" aria-label="Tenista dreta" title="Tenista dreta">🏃</div>
+
+            <div id="ball" class="draggable ball" data-type="ball" style="left: 16%; top: 50%;" aria-label="Pilota numerada" title="Dificultat de la pilota">
+              <span id="ball-value">1</span>
+            </div>
+
+
+          </section>
+
+          <section class="player-cards" aria-label="Fitxes dels tenistes">
+            <article class="player-card left-card" data-player="left">
+              <h2>Fitxa Esquerra</h2>
+              <label class="name-row">Nom
+                <input type="text" id="name-left" value="Ferran" />
+              </label>
+              <label class="stat-row" data-stat-name="Saque">Saque
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="2" />
+              </label>
+              <label class="stat-row" data-stat-name="Restada">Restada
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="2" />
+              </label>
+              <label class="stat-row" data-stat-name="General">General
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="2" />
+              </label>
+              <label class="stat-row" data-stat-name="Voleia">Voleia
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="2" />
+              </label>
+              <label>Energia
+                <input class="energy-input" type="number" step="1" value="5" />
+              </label>
+              <label>Energia Max
+                <input class="stat-max" type="text" value="5" readonly />
+              </label>
+              <label class="recovery-row">Recuperació d’energia (%)
+                <input class="recovery-factor" type="number" min="0" max="100" step="1" value="50" />
+              </label>
+              <p class="hit-result">Tirada: pendent</p>
+              <div class="hit-adjust hidden">
+                <p class="adjust-info">Pots retirar daus '-' gastant energia.</p>
+                <button class="remove-minus-btn" type="button">Treure un '-' (-1 energia)</button>
+              </div>
+            </article>
+
+            <article class="player-card right-card" data-player="right">
+              <h2>Fitxa Dreta</h2>
+              <label class="name-row">Nom
+                <input type="text" id="name-right" value="Joan Albert" />
+              </label>
+              <label class="stat-row" data-stat-name="Saque">Saque
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="2" />
+              </label>
+              <label class="stat-row" data-stat-name="Restada">Restada
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="2" />
+              </label>
+              <label class="stat-row" data-stat-name="General">General
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="2" />
+              </label>
+              <label class="stat-row" data-stat-name="Voleia">Voleia
+                <input class="stat-input" type="number" min="1" max="4" step="1" value="2" />
+              </label>
+              <label>Energia
+                <input class="energy-input" type="number" step="1" value="5" />
+              </label>
+              <label>Energia Max
+                <input class="stat-max" type="text" value="5" readonly />
+              </label>
+              <label class="recovery-row">Recuperació d’energia (%)
+                <input class="recovery-factor" type="number" min="0" max="100" step="1" value="50" />
+              </label>
+              <p class="hit-result">Tirada: pendent</p>
+              <div class="hit-adjust hidden">
+                <p class="adjust-info">Pots retirar daus '-' gastant energia.</p>
+                <button class="remove-minus-btn" type="button">Treure un '-' (-1 energia)</button>
+              </div>
+            </article>
+          </section>
+        </div>
+
+        <div class="action-panels">
+        <aside class="hit-panel turn-panel" aria-labelledby="turn-title">
+          <header class="action-panel-heading"><span class="panel-step">01</span><h2 id="turn-title">Torn</h2></header>
+          <p id="turn-status" class="turn-status">Torn: —</p>
+          <p id="turn-hint" class="turn-hint" aria-live="polite">—</p>
+          <label id="serve-difficulty-control" class="serve-difficulty">Valor a aconseguir en el saque
+            <input id="serve-difficulty" type="number" min="1" step="1" value="1" aria-label="Valor a aconseguir en el saque" />
+          </label>
+          <button id="move-to-ball" type="button" hidden>Apropar-se a la pilota</button>
+          <button id="attempt-volley" type="button" hidden>Intentar volea</button>
+          <button id="hit-action" type="button" disabled>Colpejar</button>
+          <div id="post-hit-movement" hidden role="group" aria-label="Moviment després del cop">
+            <button type="button" data-post-hit-col="0" data-post-hit-row="-1">↑ Amunt</button>
+            <button type="button" data-post-hit-col="0" data-post-hit-row="1">↓ Avall</button>
+            <button type="button" data-post-hit-col="-1" data-post-hit-row="0">← Esquerra</button>
+            <button type="button" data-post-hit-col="1" data-post-hit-row="0">→ Dreta</button>
+            <button type="button" data-post-hit-col="0" data-post-hit-row="0">Quedar-se al lloc</button>
+          </div>
+        </aside>
+
+        <aside class="hit-panel result-panel" aria-labelledby="hit-title">
+          <header class="action-panel-heading"><span class="panel-step">02</span><h2 id="hit-title">Colpeig</h2></header>
+          <p id="hit-panel-player" class="hit-panel-player">—</p>
+          <p id="hit-panel-stat" class="hit-panel-stat">Tirada: pendent</p>
+          <div class="dice-tray">
+            <div id="hit-panel-dice" class="hit-panel-dice" role="img" aria-label="Daus pendents de tirar"></div>
+            <p class="dice-legend">4 daus Fate · +1 / blanc / −1</p>
+          </div>
+          <p id="hit-panel-total" class="hit-panel-total" aria-live="polite">Total: 0</p>
+          <button id="hit-panel-remove" type="button" hidden>Treure un '-' (-1 energia)</button>
+          <button id="hit-panel-resolve" type="button">Resoldre colpeig</button>
+          <p id="hit-panel-info" class="hit-panel-info">—</p>
+        </aside>
+
+        </div>
+
+        <aside class="panel" aria-label="Control del partit">
+          <section class="panel-block">
+            <h2>Marcador</h2>
+            <div class="score-grid">
+              <span></span>
+              <strong id="score-name-left">Esquerra</strong>
+              <strong id="score-name-right">Dreta</strong>
+
+              <span>Sets</span>
+              <span id="sets-left">0</span>
+              <span id="sets-right">0</span>
+
+              <span>Jocs</span>
+              <span id="games-left">0</span>
+              <span id="games-right">0</span>
+
+              <span>Punts</span>
+              <span id="points-left">0</span>
+              <span id="points-right">0</span>
+            </div>
+            <p id="match-status" class="match-status">Mode: Joc normal</p>
+            <p id="recovery-status" class="recovery-status">Recuperació: pendent (cal acabar un joc o un set)</p>
+            <button id="new-game" type="button" class="ghost">Nova partida</button>
+          </section>
+
+        </aside>
+      </div>
+    </main>
+
+    <dialog id="setup-dialog" class="movement-dialog" aria-labelledby="setup-title">
+      <form id="setup-form">
+        <h2 id="setup-title">Configura la partida</h2>
+        <label>Qui fa el saque inicial?
+          <select id="initial-server">
+            <option value="left">Ferran</option>
+            <option value="right">Joan Albert</option>
+          </select>
+        </label>
+        <label>A quants sets?
+          <select id="match-best-of">
+            <option value="1">1 set (guanya qui en guanya 1)</option>
+            <option value="3" selected>Al millor de 3 (guanya qui en guanya 2)</option>
+            <option value="5">Al millor de 5 (guanya qui en guanya 3)</option>
+          </select>
+        </label>
+        <p>Totes les característiques comencen a 2 i l’energia a 5.</p>
+        <div class="movement-dialog-actions">
+          <button id="resume-game" type="button" class="ghost" hidden>Continuar partida</button>
+          <button type="submit">Començar partida</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="movement-dialog" class="movement-dialog">
+      <h2>Moviment fins a la pilota</h2>
+      <p id="movement-dialog-message"></p>
+      <div class="movement-dialog-actions">
+        <button id="movement-cancel" type="button" class="ghost">Renunciar al punt</button>
+        <button id="movement-confirm" type="button">Fer el moviment</button>
+      </div>
+    </dialog>
+
+    <script src="script.js"></script>
+    <script src="multiplayer.js"></script>
+  </body>
+</html>
