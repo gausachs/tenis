@@ -537,7 +537,9 @@ function updateTurnUI() {
     card.classList.toggle('active-card', card.dataset.player === turn.activeSide);
   });
   moveToBallBtn.hidden = turn.phase === 'reposition' || turn.phase === 'serve' || turn.ballPlaced || playerCanReachBall(turn.activeSide);
+  moveToBallBtn.disabled = moveToBallBtn.hidden || Boolean(matchWinner());
   attemptVolleyBtn.hidden = !canAttemptVolley();
+  attemptVolleyBtn.disabled = attemptVolleyBtn.hidden;
   attemptVolleyBtn.textContent = `Intentar volea (+${volleyDifficultyIncrease()} dificultat, -1 energia)`;
   postHitMovementEl.hidden = turn.phase !== 'reposition';
   postHitMovementButtons.forEach((button) => {
