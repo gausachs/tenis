@@ -69,3 +69,33 @@ test('successful serve cannot spend energy to remove a minus',()=>{
   s=runGame(s,{type:'resolve'});assert.equal(s.turn.phase,'reposition');
   s=runGame(s,{type:'reposition',colStep:0,rowStep:0});assert.equal(s.turn.activeSide,'right');assert.equal(s.turn.returningServe,true);
 });
+
+test('GitHub Pages can create and join rooms through CORS without exposing other origins', async () => {
+  const db = createLocalDB();
+  const origin = 'https://gausachs.github.io';
+  const request = (path, method, body, token = tokenA) => new Request(`https://game.test${path}`, {
+    method, headers: { Origin: origin, 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  });
+  try {
+    const preflight = await handleAPI(new Request('https://game.test/api/rooms', { method: 'OPTIONS', headers: {
+      Origin: origin, 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'authorization,content-type',
+    } }), { DB: db });
+    assert.equal(preflight.status, 204);
+    assert.equal(preflight.headers.get('access-control-allow-origin'), origin);
+    assert.equal(preflight.headers.get('access-control-allow-credentials'), null);
+    const created = await handleAPI(request('/api/rooms', 'POST', { token: tokenA }), { DB: db });
+    assert.equal(created.status, 201); assert.equal(created.headers.get('access-control-allow-origin'), origin);
+    const room = await created.json();
+    const joined = await handleAPI(request(`/api/rooms/${room.room}/join`, 'POST', {}, tokenB), { DB: db });
+    assert.equal(joined.status, 200); assert.equal((await joined.json()).participants, 2);
+    const snapshot = await handleAPI(request(`/api/rooms/${room.room}`, 'GET'), { DB: db });
+    assert.equal(snapshot.status, 200); assert.equal(snapshot.headers.get('access-control-allow-origin'), origin);
+    const denied = await handleAPI(request(`/api/rooms/${room.room}`, 'GET', null, 'c'.repeat(64)), { DB: db });
+    assert.equal(denied.status, 403); assert.equal(denied.headers.get('access-control-allow-origin'), origin);
+    const other = await handleAPI(new Request('https://game.test/api/rooms', { method: 'OPTIONS', headers: {
+      Origin: 'https://other.test', 'Access-Control-Request-Method': 'POST',
+    } }), { DB: db });
+    assert.equal(other.status, 403); assert.equal(other.headers.get('access-control-allow-origin'), null);
+  } finally { db.close(); }
+});

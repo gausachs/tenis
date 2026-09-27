@@ -1,4 +1,7 @@
 (() => {
+  const apiOrigin = location.hostname === 'gausachs.github.io'
+    ? 'https://tenis-fate-joan-albert.azure-mars-5669.chatgpt.site'
+    : '';
   const status = document.getElementById('online-status');
   const message = document.getElementById('online-message');
   const lobby = document.getElementById('online-lobby');
@@ -54,12 +57,25 @@
     refreshControls();
   }
   async function request(path, options = {}) {
-    const response = await fetch(path, {
+    let response;
+    try {
+      response = await fetch(`${apiOrigin}${path}`, {
       ...options,
       headers: { 'Content-Type': 'application/json', ...(online.token ? { Authorization: `Bearer ${online.token}` } : {}), ...options.headers },
       cache: 'no-store', signal: AbortSignal.timeout(12000),
-    });
-    const data = await response.json();
+      ...(apiOrigin ? { credentials: 'omit' } : {}),
+      });
+    } catch {
+      throw new Error('No es pot connectar amb el servei multijugador. Comprova la connexió; el servei ha d’estar publicat i permetre l’accés des d’aquest web.');
+    }
+    if (!response.headers.get('content-type')?.includes('application/json')) {
+      const error = new Error('El servei multijugador no està disponible o demana iniciar sessió. GitHub Pages només allotja el tauler; cal que el servei de partides sigui accessible.');
+      error.status = response.status;
+      throw error;
+    }
+    let data;
+    try { data = await response.json(); }
+    catch { throw new Error('El servei multijugador ha retornat una resposta no vàlida. Torna-ho a provar més tard.'); }
     if (!response.ok) {
       if (data.state) applySnapshot(data);
       const error = new Error(data.error || 'No s’ha pogut connectar.'); error.status = response.status; throw error;

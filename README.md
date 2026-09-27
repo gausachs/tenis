@@ -43,7 +43,7 @@ Les proves cobreixen dos participants, accions simultànies, revisions obsoletes
 
 ## Publicació i GitHub
 
-GitHub conserva el codi. GitHub Pages només serveix fitxers estàtics i no executa la base de dades ni el servidor multijugador. El joc complet es publica amb Sites (Worker + D1), segons `.openai/hosting.json`.
+GitHub conserva el codi. GitHub Pages només serveix fitxers estàtics i no executa la base de dades ni el servidor multijugador. El servei multijugador es publica amb Sites (Worker + D1), segons `.openai/hosting.json`. La interfície de `https://gausachs.github.io/tenis/versio-nova/` s’hi connecta directament; el servei ha de ser públic. Només s’accepten peticions de navegador del mateix servei i de `https://gausachs.github.io`. Les sessions de cada partida continuen requerint el seu identificador.
 
 La construcció produeix `dist/server/index.js`. La configuració declara el vincle D1 `DB`; no conté contrasenyes. Les migracions es generen amb `npm run db:generate` i s’apliquen durant la publicació.
 

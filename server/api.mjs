@@ -26,10 +26,36 @@ async function snapshot(db, room, now) {
   const result = await db.prepare('SELECT count(*) AS total FROM members WHERE room_id = ? AND last_seen > ?').bind(room.id, now - 15000).first();
   return { room: room.id, revision: room.revision, mode: room.mode, state: JSON.parse(room.state), participants: result.total };
 }
+// GitHub Pages serves the interface; the Worker owns shared matches.
+const githubPagesOrigin = 'https://gausachs.github.io';
 export async function handleAPI(request, env) {
+  const origin = request.headers.get('origin');
+  const sameOrigin = new URL(request.url).origin;
+  if (origin && origin !== sameOrigin && origin !== githubPagesOrigin) {
+    return json({ error: 'Origen no permès.' }, 403);
+  }
+  const corsHeaders = { Vary: 'Origin' };
+  if (origin) corsHeaders['Access-Control-Allow-Origin'] = origin;
+  if (request.method === 'OPTIONS') {
+    const method = request.headers.get('access-control-request-method');
+    const requestedHeaders = (request.headers.get('access-control-request-headers') || '')
+      .split(',').map(value => value.trim().toLowerCase()).filter(Boolean);
+    if (!['GET', 'POST'].includes(method) || requestedHeaders.some(name => !['authorization', 'content-type'].includes(name))) {
+      return new Response(null, { status: 403, headers: corsHeaders });
+    }
+    return new Response(null, { status: 204, headers: {
+      ...corsHeaders, 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Max-Age': '600',
+    } });
+  }
+  const response = await handleRoomAPI(request, env);
+  const responseHeaders = new Headers(response.headers);
+  for (const [name, value] of Object.entries(corsHeaders)) responseHeaders.set(name, value);
+  return new Response(response.body, { status: response.status, headers: responseHeaders });
+}
+
+async function handleRoomAPI(request, env) {
   const url = new URL(request.url);
-  // Browser actions must originate on the game's own site.
-  if (request.method !== 'GET' && request.headers.get('origin') && request.headers.get('origin') !== url.origin) return json({ error: 'Origen no permès.' }, 403);
   const db = env.DB;
   if (!db) return json({ error: 'El servei de partides encara no està configurat.' }, 503);
   const now = Date.now();
