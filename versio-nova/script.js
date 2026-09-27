@@ -855,7 +855,7 @@ function animateHitDice() {
 
 function updateHitPanelForPlayer(side) {
   const state = hitStateByPlayer[side];
-  if (!state) {
+  if (!state || state.resolved) {
     hitPanelPlayerEl.textContent = '—';
     hitPanelStatEl.textContent = 'Colpeig: —';
     renderHitDice();
@@ -1001,7 +1001,7 @@ function handleHit() {
     : total <= ballValue - 2;
   if (isError && turn.phase !== 'serve') {
     state.forcedError = true;
-    state.outcome = 'Tir erroni. Prem Resoldre colpeig.';
+    state.outcome = 'Tir erroni. Prem Resoldre.';
   }
   const resultText = `${statName}: ${rollData.symbolsText} (${rollData.total}) + ${statValue} = ${total}`;
   resultEl.textContent = resultText;
@@ -1167,6 +1167,7 @@ function resetCourtAfterPoint() {
     turn.phase = 'finished';
     turn.hitReady = true;
     turn.ballPlaced = true;
+    updateHitPanelForPlayer(lastHitSide || 'left');
     updateHitButtons();
     updateTurnUI();
     return;
