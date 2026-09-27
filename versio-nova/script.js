@@ -52,6 +52,10 @@ const pointsLeftEl = document.getElementById('points-left');
 const pointsRightEl = document.getElementById('points-right');
 const matchStatusEl = document.getElementById('match-status');
 const recoveryStatusEl = document.getElementById('recovery-status');
+const recoveryDialog = document.getElementById('recovery-dialog');
+const recoveryDialogTitle = document.getElementById('recovery-dialog-title');
+const recoveryDialogMessage = document.getElementById('recovery-dialog-message');
+let recoveryEvent = null;
 
 let active = null;
 let offsetX = 0;
@@ -134,6 +138,7 @@ function getGameState() {
       ballValue,
       lastHitSide,
       hitStateByPlayer,
+      recoveryEvent,
       playerPositions: {
         left: { left: playerLeftEl.style.left, top: playerLeftEl.style.top },
         right: { left: playerRightEl.style.left, top: playerRightEl.style.top }
@@ -153,12 +158,14 @@ function saveGame() {
   }
 }
 
-function restoreGame(sharedState = null) {
+function restoreGame(sharedState = null, { notifyRecovery = false } = {}) {
   try {
     const rawState = sharedState ? null : localStorage.getItem(GAME_STORAGE_KEY);
     if (!sharedState && !rawState) return false;
     const state = sharedState || JSON.parse(rawState);
     if (!state.score || !state.turn || !state.playerPositions || !state.ballPosition) return false;
+    const previousRecoveryId = recoveryEvent?.id;
+    recoveryEvent = state.recoveryEvent || null;
 
     Object.assign(score.left, state.score.left || {});
     Object.assign(score.right, state.score.right || {});
@@ -211,6 +218,7 @@ function restoreGame(sharedState = null) {
     updateHitButtons();
     updateHitPanelForPlayer(lastHitSide || 'left');
     updateTurnUI();
+    renderRecovery(notifyRecovery && recoveryEvent?.id !== previousRecoveryId);
     return true;
   } catch {
     return false;
@@ -928,9 +936,29 @@ function recoverEnergy() {
   return recoveredByPlayer;
 }
 
-function showRecovery(context, recovered) {
-  recoveryStatusEl.textContent =
-    `${context}: Esquerra +${recovered.left} | Dreta +${recovered.right}`;
+function showRecovery(context, recovered, reason = '') {
+  recoveryEvent = {
+    id: (recoveryEvent?.id || 0) + 1,
+    context, recovered, reason,
+    names: { left: getPlayerLabel('left'), right: getPlayerLabel('right') },
+    energy: { left: energyForPlayer('left'), right: energyForPlayer('right') },
+  };
+  renderRecovery(true);
+}
+
+function renderRecovery(notify = false) {
+  if (!recoveryEvent) {
+    recoveryStatusEl.textContent = 'Recuperació: pendent (cal acabar un joc o un set)';
+    if (recoveryDialog.open) recoveryDialog.close();
+    return;
+  }
+  const { context, recovered, names, energy, reason } = recoveryEvent;
+  recoveryStatusEl.textContent = `${context}: ${names.left} +${recovered.left} | ${names.right} +${recovered.right}`;
+  recoveryDialogTitle.textContent = `${context} · Recuperació d’energia`;
+  recoveryDialogMessage.textContent = ['left', 'right'].map(side =>
+    `${names[side]}: +${recovered[side]} d’energia recuperada. Energia actual: ${energy[side]}.`
+  ).join('\n') + (reason ? `\n${reason}` : '');
+  if (notify && !recoveryDialog.open) recoveryDialog.showModal();
 }
 
 function rollFate() {
@@ -1274,6 +1302,8 @@ function updateScoreUI() {
 }
 
 function resetAllScore() {
+  recoveryEvent = null;
+  renderRecovery();
   score.left.sets = 0;
   score.right.sets = 0;
   resetGamesAndPoints();
@@ -1318,7 +1348,8 @@ function completeRegularGame(winnerSide) {
 
   const recovered =
     pointsPlayedInGame <= 7 ? recoverEnergy() : { left: 0, right: 0 };
-  showRecovery('Fi de joc', recovered);
+  showRecovery('Fi de joc', recovered, pointsPlayedInGame > 7
+    ? 'Aquest joc ha superat els 7 punts: no hi ha recuperació d’energia.' : '');
 
   maybeStartTieBreak();
   updateScoreUI();

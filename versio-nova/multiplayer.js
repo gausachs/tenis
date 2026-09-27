@@ -41,6 +41,7 @@
   function applySnapshot(data) {
     if (data.room !== online.room || data.revision < online.revision) return;
     const changed = data.revision > online.revision || !online.state;
+    const hadState = Boolean(online.state);
     const newRoll = online.state && !online.state.turn.hitReady && data.state.turn.hitReady && data.state.lastHitSide;
     online.participants = data.participants;
     online.connected = true;
@@ -51,7 +52,7 @@
         active.classList.remove('dragging'); active = null; dragStartCell = null;
       }
       if (movementDialog.open) movementDialog.close();
-      restoreGame(data.state);
+      restoreGame(data.state, { notifyRecovery: hadState });
       if (newRoll) animateHitDice();
     }
     refreshControls();
