@@ -33,20 +33,41 @@ Les proves cobreixen dos participants, accions simultànies, revisions obsoletes
 
 ## Estructura
 
-- `versio-nova/`: interfície i regles originals; també continua funcionant en mode local.
-- `scripts/generate-engine.mjs`: genera una versió aïllada de les mateixes regles per al servidor, sense avaluació dinàmica de codi.
-- `server/game-dom.mjs`: adaptador del tauler per executar les regles sense navegador.
-- `server/api.mjs`: sales, participants i aplicació atòmica d’accions amb control de revisió.
-- `server/worker.mjs`: servidor compatible amb Cloudflare Workers i fitxers públics.
-- `db/schema.ts` i `drizzle/`: esquema i migracions de la base de dades D1.
+- `versio-nova/`: interfície i regles originals; també funciona en mode local.
+- `scripts/generate-engine.mjs`: genera el motor de regles del servidor.
+- `server/api.mjs`: partides, participants i accions atòmiques amb control de revisió.
+- `api/index.js`: entrada de Vercel Functions.
+- `server/postgres-db.mjs`: connexió PostgreSQL per a producció.
+- `db/postgres.sql`: esquema de producció, aplicat amb `npm run db:migrate`.
+- `server/local-app.mjs` i `server/local-db.mjs`: servidor i SQLite de desenvolupament.
+- `db/schema.ts` i `drizzle/`: esquema i migracions SQLite locals.
+- `vercel.json`: construcció, rutes i configuració de Vercel.
 - `.github/workflows/checks.yml`: proves i construcció automàtiques a GitHub.
 
-## Publicació i GitHub
+## Publicació a Vercel
 
-GitHub conserva el codi. GitHub Pages només serveix fitxers estàtics i no executa la base de dades ni el servidor multijugador. El servei multijugador es publica amb Sites (Worker + D1), segons `.openai/hosting.json`. La interfície de `https://gausachs.github.io/tenis/versio-nova/` s’hi connecta directament; el servei ha de ser públic. Només s’accepten peticions de navegador del mateix servei i de `https://gausachs.github.io`. Les sessions de cada partida continuen requerint el seu identificador.
+El web i el servei multijugador s’allotgen a Vercel. Les partides es desen en PostgreSQL
+(per exemple, Neon amb el pla gratuït del Marketplace de Vercel).
+El codi es conserva a GitHub. GitHub Pages només pot servir el tauler estàtic.
 
-La construcció produeix `dist/server/index.js`. La configuració declara el vincle D1 `DB`; no conté contrasenyes. Les migracions es generen amb `npm run db:generate` i s’apliquen durant la publicació.
+1. Vincula el projecte amb `npx vercel link` al compte propietari.
+2. A Vercel → Storage, connecta una base de dades PostgreSQL al projecte per a producció.
+3. Configura `DATABASE_URL` o `POSTGRES_URL` amb la connexió que facilita el proveïdor.
+4. Descarrega les variables amb `npx vercel env pull .env.local --environment=production`.
+5. Executa `npm run db:migrate` per crear l’esquema sense esborrar dades.
+6. Executa `npm test` i publica amb `npx vercel --prod`.
 
-No pugis `.local/`, `.env`, credencials, fitxers de sessió ni `node_modules/`. Els identificadors de participants són secrets temporals de navegador; només se’n desa el resum criptogràfic al servidor.
+La construcció genera el web a `dist/` i el motor a `.generated/`; Vercel empaqueta
+`api/index.js` com a funció Node.js. El navegador fa les peticions a `/api/rooms`
+del mateix domini. No cal un servidor separat ni una subscripció de ChatGPT.
+Les versions de previsualització necessiten una base de dades pròpia si s’hi vol
+provar el multijugador; no hi connectis la de producció automàticament.
 
-En el futur es pot afegir un mode de dos jugadors amb torns exclusius i espectadors. La validació centralitzada d’accions permet fer aquest canvi sense canviar les regles del joc.
+El tauler de GitHub Pages es connecta a `https://tenis-fate.vercel.app`.
+Per canviar aquest destí, actualitza `versio-nova/multiplayer.js` o configura
+`window.TENIS_API_ORIGIN` abans de carregar-lo.
+El servidor accepta el mateix origen i `https://gausachs.github.io`.
+
+No pugis `.local/`, `.vercel/`, `.env*` (excepte `.env.example`), credencials,
+fitxers de sessió ni `node_modules/`. Els identificadors de participants són secrets
+temporals de navegador; al servidor només se’n desa el resum criptogràfic.

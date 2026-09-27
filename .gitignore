@@ -1,7 +1,6 @@
 node_modules/
 dist/
 .generated/
-.wrangler/
 .env
 .env.*
 !.env.example
@@ -9,3 +8,5 @@ dist/
 *.tar.gz
 
 .local/
+
+.vercel/

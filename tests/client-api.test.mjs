@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 const source = readFileSync('versio-nova/multiplayer.js', 'utf8');
-async function createFromPage(hostname, response) {
+async function createFromPage(hostname, response, apiOrigin = '') {
   const elements = new Map(); const requests = [];
   const element = id => {
     if (!elements.has(id)) elements.set(id, { textContent: '', addEventListener(event, handler) { this[event] = handler; } });
@@ -11,7 +11,7 @@ async function createFromPage(hostname, response) {
   };
   const context = {
     document: { getElementById: element, addEventListener() {} },
-    location: { hostname, search: '' }, window: { addEventListener() {} },
+    location: { hostname, search: '' }, window: { TENIS_API_ORIGIN: apiOrigin, addEventListener() {} },
     URLSearchParams, AbortSignal, crypto, setInterval() {},
     score: { initialServer: 'left', bestOf: 3 }, getPlayerLabel: () => 'Test',
     fetch: async (url, options) => { requests.push({ url, options }); return response; },
@@ -22,7 +22,7 @@ async function createFromPage(hostname, response) {
 }
 test('Pages sends the room request to the real backend and explains HTML responses', async () => {
   const result = await createFromPage('gausachs.github.io', new Response('<html>Login</html>', { headers: { 'Content-Type': 'text/html' } }));
-  assert.equal(result.requests[0].url, 'https://tenis-fate-joan-albert.azure-mars-5669.chatgpt.site/api/rooms');
+  assert.equal(result.requests[0].url, 'https://tenis-fate.vercel.app/api/rooms');
   assert.equal(result.requests[0].options.credentials, 'omit');
   assert.match(result.message, /demana iniciar sessió/); assert.doesNotMatch(result.message, /Unexpected token/);
 });

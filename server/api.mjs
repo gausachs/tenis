@@ -26,7 +26,7 @@ async function snapshot(db, room, now) {
   const result = await db.prepare('SELECT count(*) AS total FROM members WHERE room_id = ? AND last_seen > ?').bind(room.id, now - 15000).first();
   return { room: room.id, revision: room.revision, mode: room.mode, state: JSON.parse(room.state), participants: result.total };
 }
-// GitHub Pages serves the interface; the Worker owns shared matches.
+// GitHub Pages serves the interface; the API owns shared matches.
 const githubPagesOrigin = 'https://gausachs.github.io';
 export async function handleAPI(request, env) {
   const origin = request.headers.get('origin');

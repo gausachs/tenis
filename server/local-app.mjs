@@ -18,7 +18,7 @@ export default {
     return new Response(request.method === 'HEAD' ? null : asset[0], { headers: {
       'Content-Type': `${asset[1]}; charset=utf-8`, 'Cache-Control': 'no-cache',
       'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin',
-      'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'self' https://*.chatgpt.com https://chatgpt.com; base-uri 'none'; form-action 'self'",
+      'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'self'; base-uri 'none'; form-action 'self'",
     } });
   }
 };

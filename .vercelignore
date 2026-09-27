@@ -1,0 +1,7 @@
+.git
+.local
+.env*
+!.env.example
+tests
+node_modules
+dist

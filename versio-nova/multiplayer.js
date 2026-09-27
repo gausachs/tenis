@@ -1,7 +1,7 @@
 (() => {
-  const apiOrigin = location.hostname === 'gausachs.github.io'
-    ? 'https://tenis-fate-joan-albert.azure-mars-5669.chatgpt.site'
-    : '';
+  const apiOrigin = window.TENIS_API_ORIGIN || (location.hostname === 'gausachs.github.io'
+    ? 'https://tenis-fate.vercel.app'
+    : '');
   const status = document.getElementById('online-status');
   const message = document.getElementById('online-message');
   const lobby = document.getElementById('online-lobby');
