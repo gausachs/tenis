@@ -224,6 +224,7 @@ function restoreGame(sharedState = null, { notifyRecovery = false } = {}) {
     updatePointButtons();
     updateScoreUI();
     updateHitButtons();
+    playerCards.forEach(updateHitAdjustUI);
     updateHitPanelForPlayer(lastHitSide || 'left');
     updateTurnUI();
     renderRecovery(notifyRecovery && recoveryEvent?.id !== previousRecoveryId);
@@ -782,9 +783,12 @@ function rollDataFromRolls(rolls) {
   };
 }
 
-function serveTargetReached(state) {
-  return state?.statName === 'Saque' &&
-    rollDataFromRolls(state.rolls).total + state.statValue >= ballValue;
+function canRescueHit(state, side) {
+  if (!state || state.resolved) return false;
+  const total = rollDataFromRolls(state.rolls).total + state.statValue;
+  const target = state.statName === 'Saque' ? ballValue : ballValue - 1;
+  const negatives = state.rolls.filter(value => value === -1).length;
+  return total < target && total + Math.min(negatives, energyForPlayer(side)) >= target;
 }
 
 function updateReturnRescue(state, side) {
@@ -855,7 +859,7 @@ function updateHitPanelForPlayer(side) {
   renderHitDice(state.rolls);
   hitPanelTotalEl.textContent = `Total: ${rollData.total} + ${state.statValue} = ${total}`;
   hitPanelInfoEl.textContent = state.outcome || `Daus '-' disponibles: ${minusCount}. Energia: ${energyValue}.`;
-  const canRemoveMinus = !state.resolved && !state.forcedError && !serveTargetReached(state) && minusCount > 0 && energyValue > 0;
+  const canRemoveMinus = canRescueHit(state, side);
   hitPanelRemoveBtn.hidden = !canRemoveMinus;
   hitPanelRemoveBtn.disabled = !canRemoveMinus;
   hitPanelResolveBtn.disabled = Boolean(state.resolved);
@@ -1034,7 +1038,11 @@ function updateHitAdjustUI(playerCard) {
   const energyValue = Math.max(0, Number.parseInt(energyInput.value, 10) || 0);
   energyInput.value = energyValue.toString();
 
-  if (!state || minusCount === 0 || serveTargetReached(state)) {
+  const canImprove = canRescueHit(state, playerSide);
+  const removeButton = playerCard.querySelector('.remove-minus-btn');
+  removeButton.hidden = !canImprove;
+  removeButton.disabled = !canImprove;
+  if (!canImprove) {
     adjustBox.classList.add('hidden');
     return;
   }
@@ -1053,7 +1061,7 @@ function handleRemoveMinus(event) {
   if (!playerCard) return;
   const playerSide = playerCard.dataset.player;
   const state = hitStateByPlayer[playerSide];
-  if (!state || state.resolved || state.forcedError || serveTargetReached(state)) return;
+  if (!canRescueHit(state, playerSide)) return;
 
   const energyInput = playerCard.querySelector('.energy-input');
   const currentEnergy = Math.max(0, Number.parseInt(energyInput.value, 10) || 0);
@@ -1063,6 +1071,7 @@ function handleRemoveMinus(event) {
   state.rolls[minusIndex] = 0;
   state.outcome = '';
   energyInput.value = (currentEnergy - 1).toString();
+  if (state.statName !== 'Saque') updateReturnRescue(state, playerSide);
 
   const rollData = rollDataFromRolls(state.rolls);
   updateFatePanel(rollData);
@@ -1427,7 +1436,11 @@ setupDialog.addEventListener('cancel', (event) => {
 });
 
 document.addEventListener('input', (event) => {
-  if (event.target.matches('.energy-input')) updateTurnUI();
+  if (event.target.matches('.energy-input')) {
+    updateTurnUI();
+    playerCards.forEach(updateHitAdjustUI);
+    updateHitPanelForPlayer(lastHitSide || 'left');
+  }
   saveGame();
 });
 document.addEventListener('pointerup', () => setTimeout(saveGame, 0));

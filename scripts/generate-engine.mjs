@@ -44,8 +44,7 @@ if (action) {
     }
     case 'hit': requireRule(!hitActionBtn.disabled); handleHit(); break;
     case 'removeMinus':
-      requireRule(turn.hitReady && lastHitSide === turn.activeSide && pendingHit && !pendingHit.resolved && !pendingHit.forcedError &&
-        !serveTargetReached(pendingHit) && pendingHit.rolls.includes(-1) && energyForPlayer(turn.activeSide) > 0);
+      requireRule(turn.hitReady && lastHitSide === turn.activeSide && canRescueHit(pendingHit, turn.activeSide));
       handleRemoveMinus({currentTarget: {closest: () => document.querySelector('.player-card[data-player="' + turn.activeSide + '"]')}}); break;
     case 'resolve': requireRule(turn.hitReady && pendingHit && !pendingHit.resolved); resolveHit(); break;
     case 'reposition':

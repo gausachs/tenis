@@ -74,3 +74,44 @@ test('existing saved matches with the old forced-error flag can also be rescued'
   assert.equal(rescued.playerCards[0].energy, '4');
   assert.equal(action(rescued, 'resolve').turn.phase, 'reposition');
 });
+
+test('improvement is offered only until a failed shot is saved, including serves and restored matches', () => {
+  for (const statName of ['Saque', 'Restada', 'General', 'Voleia']) {
+    for (const config of [
+      { target: 2, energy: 2, visible: false }, // Already valid despite negative dice.
+      { target: 3, energy: 2, visible: true },
+      { target: 4, energy: 2, visible: true }, // Requires both improvements.
+      { target: 4, energy: 1, visible: false },
+      { target: 5, energy: 5, visible: false }, // Not enough negative dice.
+      { target: 3, energy: 0, visible: false },
+    ]) {
+      const { context, document, state } = hit();
+      state.turn.phase = statName === 'Saque' ? 'serve' : 'return';
+      state.ballValue = config.target + (statName === 'Saque' ? 0 : 1);
+      state.playerCards[0].energy = String(config.energy);
+      state.hitStateByPlayer.left = { statName, statValue: 2, rolls: [-1,-1,1,1], resolved: false, forcedError: false, outcome: '' };
+      context.restoreGame(structuredClone(state));
+      const button = document.getElementById('hit-panel-remove');
+      const card = document.querySelector('.player-card[data-player="left"]');
+      assert.equal(button.hidden, !config.visible, `${statName} target ${config.target} energy ${config.energy}`);
+      assert.equal(card.querySelector('.remove-minus-btn').disabled, !config.visible);
+      if (!config.visible) {
+        assert.throws(() => action(state, 'removeMinus'));
+        const before = JSON.stringify(context.getGameState());
+        context.handleRemoveMinus({ currentTarget: { closest: () => card } });
+        assert.equal(JSON.stringify(context.getGameState()), before);
+      } else {
+        let shared = state;
+        for (let i = 0; i < config.target - 2; i++) {
+          assert.equal(button.hidden, false);
+          context.handleRemoveMinus({ currentTarget: { closest: () => card } });
+          shared = action(shared, 'removeMinus');
+        }
+        assert.equal(button.hidden, true, 'stop offering energy as soon as the shot is safe');
+        assert.equal(card.querySelector('.remove-minus-btn').disabled, true);
+        assert.throws(() => action(shared, 'removeMinus'));
+        assert.equal(action(shared, 'resolve').turn.phase, 'reposition');
+      }
+    }
+  }
+});
