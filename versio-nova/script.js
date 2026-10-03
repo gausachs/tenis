@@ -79,6 +79,9 @@ const initialPositions = {
 };
 
 const score = {
+  mode: 'local',
+  computerReport: '',
+  computerReportPending: false,
   left: { points: 0, games: 0, sets: 0, tieBreakPoints: 0 },
   right: { points: 0, games: 0, sets: 0, tieBreakPoints: 0 },
   server: 'left',
@@ -172,6 +175,9 @@ function restoreGame(sharedState = null, { notifyRecovery = false } = {}) {
     Object.assign(score.left, state.score.left || {});
     Object.assign(score.right, state.score.right || {});
     Object.assign(score, {
+      mode: state.score.mode === 'computer' ? 'computer' : 'local',
+      computerReport: state.score.computerReport || '',
+      computerReportPending: Boolean(state.score.computerReportPending),
       server: state.score.server || 'left',
       initialServer: state.score.initialServer === 'right' ? 'right' : 'left',
       bestOf: [1, 3, 5].includes(state.score.bestOf) ? state.score.bestOf : 3,
@@ -514,6 +520,7 @@ function updateTurnUI() {
       ...movementForView(button)
     );
   });
+  window.computer?.schedule();
 }
 
 function postHitDestination(colStep, rowStep) {
@@ -558,6 +565,7 @@ function beginTurn(side, phase = 'return', serveAttempt = 1, returningServe = fa
 }
 
 function startDrag(event) {
+  if (window.computer?.ownsTurn()) return;
   if (window.multiplayer?.active && !window.multiplayer.canAct()) return;
   if (matchWinner()) return;
   active = event.currentTarget;
@@ -1301,16 +1309,27 @@ function resetAllScore() {
 }
 
 function openGameSetup() {
-  initialServerInput.options[0].textContent = getPlayerLabel('left');
-  initialServerInput.options[1].textContent = getPlayerLabel('right');
+  document.getElementById('game-mode').value = score.mode || 'local';
+  updateSetupNames();
   initialServerInput.value = score.initialServer;
   matchBestOfInput.value = String(score.bestOf);
   resumeGameBtn.hidden = !score.configured;
   setupDialog.showModal();
 }
 
+function updateSetupNames() {
+  const computerMode = document.getElementById('game-mode').value === 'computer';
+  initialServerInput.options[0].textContent = computerMode ? `Tu (${getPlayerLabel('left')})` : getPlayerLabel('left');
+  initialServerInput.options[1].textContent = computerMode ? 'Ordinador' : getPlayerLabel('right');
+}
+
 function startNewGame(event) {
   event.preventDefault();
+  score.mode = document.getElementById('game-mode').value === 'computer' ? 'computer' : 'local';
+  score.computerReport = '';
+  score.computerReportPending = false;
+  if (score.mode === 'computer') nameRightInput.value = 'Ordinador';
+  updatePointButtons();
   score.initialServer = initialServerInput.value === 'right' ? 'right' : 'left';
   score.bestOf = [1, 3, 5].includes(Number(matchBestOfInput.value)) ? Number(matchBestOfInput.value) : 3;
   score.configured = true;
@@ -1321,6 +1340,7 @@ function startNewGame(event) {
   resetCourtAfterPoint();
   setupDialog.close();
   saveGame();
+  window.computer?.schedule();
 }
 
 function completeRegularGame(winnerSide) {
@@ -1449,6 +1469,7 @@ movementDialog.addEventListener('cancel', (event) => {
 });
 newGameBtn.addEventListener('click', openGameSetup);
 setupForm.addEventListener('submit', startNewGame);
+document.getElementById('game-mode').addEventListener('change', updateSetupNames);
 resumeGameBtn.addEventListener('click', () => setupDialog.close());
 setupDialog.addEventListener('cancel', (event) => {
   if (!score.configured) event.preventDefault();

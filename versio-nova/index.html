@@ -27,6 +27,10 @@
       </section>
 
       <div class="layout">
+        <section id="computer-status" class="computer-status" hidden>
+          <span>Contra l’ordinador · Tu controles el tenista blau; l’ordinador, el vermell.</span>
+          <button id="computer-last-turn" type="button">Veure l’últim torn de l’ordinador</button>
+        </section>
         <div class="play-area">
           <label class="court-view" for="court-orientation">Orientació del tauler
             <select id="court-orientation">
@@ -192,6 +196,12 @@
     <dialog id="setup-dialog" class="movement-dialog" aria-labelledby="setup-title">
       <form id="setup-form">
         <h2 id="setup-title">Configura la partida</h2>
+        <label>Mode de joc
+          <select id="game-mode">
+            <option value="local">Dos jugadors</option>
+            <option value="computer">Contra l’ordinador</option>
+          </select>
+        </label>
         <label>Qui fa el saque inicial?
           <select id="initial-server">
             <option value="left">Ferran</option>
@@ -230,7 +240,13 @@
       </form>
     </dialog>
 
+    <dialog id="computer-dialog" class="movement-dialog" aria-labelledby="computer-title">
+      <h2 id="computer-title">Torn de l’ordinador</h2>
+      <p id="computer-report" class="computer-report"></p>
+      <form method="dialog" class="movement-dialog-actions"><button type="submit">Continuar</button></form>
+    </dialog>
     <script src="script.js"></script>
     <script src="multiplayer.js"></script>
+    <script src="computer.js"></script>
   </body>
 </html>

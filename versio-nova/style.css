@@ -44,6 +44,14 @@ p {
   gap: 0.65rem;
 }
 
+.computer-status { grid-column: 1 / -1; padding: .7rem; background: #fff; border-radius: 10px; }
+.computer-status[hidden] { display: none; }
+.computer-status button {
+  margin: .5rem 0 0; padding: .6rem .8rem; min-height: 44px;
+  border: 0; border-radius: 8px; background: var(--accent); color: white; font: inherit;
+}
+.computer-report { white-space: pre-line; text-align: left; line-height: 1.5; }
+
 .court {
   position: relative;
   width: 100%;
