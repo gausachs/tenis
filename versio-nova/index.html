@@ -28,6 +28,12 @@
 
       <div class="layout">
         <div class="play-area">
+          <label class="court-view" for="court-orientation">Orientació del tauler
+            <select id="court-orientation">
+              <option value="horizontal">Horitzontal</option>
+              <option value="vertical">Vertical</option>
+            </select>
+          </label>
           <section id="court" class="court" aria-label="Camp de tenis">
             <div class="net" aria-hidden="true"></div>
 
@@ -46,7 +52,7 @@
 
           <section class="player-cards" aria-label="Fitxes dels tenistes">
             <article class="player-card left-card" data-player="left">
-              <h2>Fitxa Esquerra</h2>
+              <h2 id="card-position-left">Fitxa Esquerra</h2>
               <label class="name-row">Nom
                 <input type="text" id="name-left" value="Ferran" />
               </label>
@@ -79,7 +85,7 @@
             </article>
 
             <article class="player-card right-card" data-player="right">
-              <h2>Fitxa Dreta</h2>
+              <h2 id="card-position-right">Fitxa Dreta</h2>
               <label class="name-row">Nom
                 <input type="text" id="name-right" value="Joan Albert" />
               </label>

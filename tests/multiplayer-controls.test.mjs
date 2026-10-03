@@ -45,6 +45,9 @@ test('movement and volley recover after joining, saving and reconnecting', async
   context.window.multiplayer.dispatch('move');
   assert.equal(move.disabled, true, 'saving must still lock controls');
   assert.equal(volley.disabled, true);
+  context.setCourtOrientation('vertical');
+  assert.equal(move.disabled, true, 'changing view must not unlock controls while saving');
+  assert.equal(volley.disabled, true);
   failAction(new TypeError('Connection lost'));
   await settle();
   assert.equal(context.window.multiplayer.canAct(), true);

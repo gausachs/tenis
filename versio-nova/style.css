@@ -56,6 +56,47 @@ p {
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2);
 }
 
+.court-view {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 600;
+}
+
+.court-view select { padding: .4rem; font: inherit; }
+
+.court[data-orientation="vertical"] {
+  max-width: 320px;
+  aspect-ratio: 2 / 3;
+  justify-self: center;
+}
+
+.court[data-orientation="vertical"] .draggable {
+  left: var(--vertical-x) !important;
+  top: var(--vertical-y) !important;
+}
+
+.court[data-orientation="vertical"] .net {
+  top: 50%; bottom: auto; left: 0;
+  width: 100%; height: 14px;
+  transform: translateY(-50%);
+  border: 0;
+  border-top: 3px solid white;
+  border-bottom: 3px solid white;
+  background: repeating-linear-gradient(90deg, #ececec 0 10px, #d5d5d5 10px 20px);
+}
+
+.court[data-orientation="vertical"] .zone-lines {
+  left: 0; width: 100%; height: 50%;
+  background-image:
+    linear-gradient(to bottom, transparent calc(33.333% - 1.5px), var(--line) calc(33.333% - 1.5px), var(--line) calc(33.333% + 1.5px), transparent calc(33.333% + 1.5px)),
+    linear-gradient(to bottom, transparent calc(66.666% - 1.5px), var(--line) calc(66.666% - 1.5px), var(--line) calc(66.666% + 1.5px), transparent calc(66.666% + 1.5px)),
+    linear-gradient(to right, transparent calc(50% - 1.5px), var(--line) calc(50% - 1.5px), var(--line) calc(50% + 1.5px), transparent calc(50% + 1.5px));
+}
+
+.court[data-orientation="vertical"] .zone-lines.right { top: 50%; }
+
 .court::before {
   content: "";
   position: absolute;

@@ -191,6 +191,7 @@ function restoreGame(sharedState = null, { notifyRecovery = false } = {}) {
     playerRightEl.style.top = state.playerPositions.right.top;
     ballEl.style.left = state.ballPosition.left;
     ballEl.style.top = state.ballPosition.top;
+    draggables.forEach(renderCourtPosition);
     serveDifficultyInput.value = state.serveDifficulty || '1';
 
     state.playerCards?.forEach((savedCard) => {
@@ -236,118 +237,74 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(value, max));
 }
 
-function boundsFor(element, courtRect) {
-  const rect = element.getBoundingClientRect();
-  const halfW = rect.width / 2;
-  const halfH = rect.height / 2;
+// Match positions always use the original 6 × 2 court, independent of the view.
+// Only rendering and pointer/button input rotate; saved and shared state do not.
+const ORIENTATION_STORAGE_KEY = 'tenis-court-orientation';
+let courtOrientation = 'horizontal';
+const orientationSelect = document.getElementById('court-orientation');
 
-  let minX = halfW;
-  let maxX = courtRect.width - halfW;
-  const minY = halfH;
-  const maxY = courtRect.height - halfH;
-
-  if (element.dataset.type === 'player') {
-    if (element.dataset.side === 'left') {
-      maxX = courtRect.width / 2 - halfW;
-    } else {
-      minX = courtRect.width / 2 + halfW;
-    }
-  }
-
-  return { minX, maxX, minY, maxY };
+function renderCourtPosition(element) {
+  element.style.setProperty?.('--vertical-x', `${100 - parseFloat(element.style.top)}%`);
+  element.style.setProperty?.('--vertical-y', element.style.left);
 }
 
-function snapToGrid(element, courtRect) {
-  const limits = boundsFor(element, courtRect);
-  const rect = element.getBoundingClientRect();
-  let centerX = rect.left - courtRect.left + rect.width / 2;
-  let centerY = rect.top - courtRect.top + rect.height / 2;
-
-  const cols = element.dataset.type === 'ball' ? 6 : 3;
-  const rows = 2;
-
-  const width = limits.maxX - limits.minX;
-  const height = limits.maxY - limits.minY;
-  const cellW = width / cols;
-  const cellH = height / rows;
-
-  let colIndex = Math.round((centerX - limits.minX) / cellW - 0.5);
-  let rowIndex = Math.round((centerY - limits.minY) / cellH - 0.5);
-
-  colIndex = clamp(colIndex, 0, cols - 1);
-  rowIndex = clamp(rowIndex, 0, rows - 1);
-
-  centerX = limits.minX + (colIndex + 0.5) * cellW;
-  centerY = limits.minY + (rowIndex + 0.5) * cellH;
-
-  if (element.dataset.type === 'ball') {
-    const ballCellKey = `${colIndex},${rowIndex}`;
-    const playerCells = [playerLeftEl, playerRightEl]
-      .map((player) => {
-        const playerRect = player.getBoundingClientRect();
-        const px = playerRect.left - courtRect.left + playerRect.width / 2;
-        const py = playerRect.top - courtRect.top + playerRect.height / 2;
-        const pLimits = boundsFor(player, courtRect);
-        const pCols = 3;
-        const pRows = 2;
-        const pCellW = (pLimits.maxX - pLimits.minX) / pCols;
-        const pCellH = (pLimits.maxY - pLimits.minY) / pRows;
-        let pCol = Math.round((px - pLimits.minX) / pCellW - 0.5);
-        let pRow = Math.round((py - pLimits.minY) / pCellH - 0.5);
-        pCol = clamp(pCol, 0, pCols - 1);
-        pRow = clamp(pRow, 0, pRows - 1);
-        const globalCol = player.dataset.side === 'left' ? pCol : pCol + 3;
-        return `${globalCol},${pRow}`;
-      })
-      .filter(Boolean);
-
-    if (playerCells.includes(ballCellKey)) {
-      const nudgeX = Math.min(12, cellW * 0.25);
-      const nudgeY = Math.min(10, cellH * 0.25);
-      centerX += nudgeX;
-      centerY -= nudgeY;
-    }
-  }
-
-  centerX = clamp(centerX, limits.minX, limits.maxX);
-  centerY = clamp(centerY, limits.minY, limits.maxY);
-
-  element.style.left = `${(centerX / courtRect.width) * 100}%`;
-  element.style.top = `${(centerY / courtRect.height) * 100}%`;
+function setCourtPosition(element, x, y) {
+  element.style.left = `${x}%`;
+  element.style.top = `${y}%`;
+  renderCourtPosition(element);
 }
 
-function getPlayerDepthFromBaseline(playerEl, courtRect) {
-  const limits = boundsFor(playerEl, courtRect);
-  const rect = playerEl.getBoundingClientRect();
-  const centerX = rect.left - courtRect.left + rect.width / 2;
-  const cols = 3;
-  const cellW = (limits.maxX - limits.minX) / cols;
-  let colIndex = Math.round((centerX - limits.minX) / cellW - 0.5);
-  colIndex = clamp(colIndex, 0, cols - 1);
-
-  return playerEl.dataset.side === 'left' ? colIndex : cols - 1 - colIndex;
+function setCourtOrientation(value, remember = true) {
+  // Changing view during a drag must not accidentally play a shot.
+  if (active) {
+    if (dragStartCell) setBallToCell(dragStartCell);
+    active.classList.remove('dragging');
+    active = null;
+    dragStartCell = null;
+  }
+  courtOrientation = value === 'vertical' ? 'vertical' : 'horizontal';
+  court.dataset.orientation = courtOrientation;
+  orientationSelect.value = courtOrientation;
+  const vertical = courtOrientation === 'vertical';
+  document.getElementById('card-position-left').textContent = vertical ? 'Fitxa Superior' : 'Fitxa Esquerra';
+  document.getElementById('card-position-right').textContent = vertical ? 'Fitxa Inferior' : 'Fitxa Dreta';
+  [playerLeftEl, playerRightEl].forEach((player, index) => {
+    const label = vertical ? (index ? 'Tenista inferior' : 'Tenista superior')
+      : (index ? 'Tenista dreta' : 'Tenista esquerra');
+    player.setAttribute('aria-label', label);
+    player.setAttribute('title', label);
+  });
+  draggables.forEach(renderCourtPosition);
+  updateTurnUI();
+  window.multiplayer?.refreshControls?.();
+  if (remember) {
+    try { localStorage.setItem(ORIENTATION_STORAGE_KEY, courtOrientation); } catch {}
+  }
 }
 
-function getGridCell(element, courtRect = court.getBoundingClientRect()) {
-  const rect = element.getBoundingClientRect();
-  const centerX = rect.left - courtRect.left + rect.width / 2;
-  const centerY = rect.top - courtRect.top + rect.height / 2;
+function movementForView(button) {
+  const x = Number(button.dataset.postHitCol);
+  const y = Number(button.dataset.postHitRow);
+  return courtOrientation === 'vertical' ? [y, -x] : [x, y];
+}
 
-  if (element.dataset.type === 'player') {
-    const limits = boundsFor(element, courtRect);
-    const cellW = (limits.maxX - limits.minX) / 3;
-    const cellH = (limits.maxY - limits.minY) / 2;
-    const localCol = clamp(Math.round((centerX - limits.minX) / cellW - 0.5), 0, 2);
-    const row = clamp(Math.round((centerY - limits.minY) / cellH - 0.5), 0, 1);
-    return { col: element.dataset.side === 'left' ? localCol : localCol + 3, row };
-  }
+function snapToGrid(element) {
+  const cell = getGridCell(element);
+  if (element.dataset.type === 'ball') setBallToCell(cell);
+  else setPlayerToCell(element, cell);
+}
 
-  const limits = boundsFor(element, courtRect);
-  const cellW = (limits.maxX - limits.minX) / 6;
-  const cellH = (limits.maxY - limits.minY) / 2;
+function getPlayerDepthFromBaseline(playerEl) {
+  return depthFromBaseline(playerEl.dataset.side, getGridCell(playerEl).col);
+}
+
+function getGridCell(element) {
+  const isPlayer = element.dataset.type === 'player';
+  const minCol = isPlayer && element.dataset.side === 'right' ? 3 : 0;
+  const maxCol = isPlayer && element.dataset.side === 'left' ? 2 : 5;
   return {
-    col: clamp(Math.round((centerX - limits.minX) / cellW - 0.5), 0, 5),
-    row: clamp(Math.round((centerY - limits.minY) / cellH - 0.5), 0, 1)
+    col: clamp(Math.floor(parseFloat(element.style.left) * 6 / 100), minCol, maxCol),
+    row: clamp(Math.floor(parseFloat(element.style.top) * 2 / 100), 0, 1)
   };
 }
 
@@ -369,20 +326,12 @@ function setBallToCell(cell) {
     : 0;
   const yOffset = matchingPlayer ? -6 : 0;
 
-  ballEl.style.left = `${((cell.col + 0.5) / 6) * 100 + xOffset}%`;
-  ballEl.style.top = `${((cell.row + 0.5) / 2) * 100 + yOffset}%`;
+  setCourtPosition(ballEl, ((cell.col + 0.5) / 6) * 100 + xOffset,
+    ((cell.row + 0.5) / 2) * 100 + yOffset);
 }
 
-function setPlayerToCell(player, cell, courtRect) {
-  const limits = boundsFor(player, courtRect);
-  const localCol = player.dataset.side === 'left' ? cell.col : cell.col - 3;
-  const cellW = (limits.maxX - limits.minX) / 3;
-  const cellH = (limits.maxY - limits.minY) / 2;
-  const centerX = limits.minX + (localCol + 0.5) * cellW;
-  const centerY = limits.minY + (cell.row + 0.5) * cellH;
-
-  player.style.left = `${(centerX / courtRect.width) * 100}%`;
-  player.style.top = `${(centerY / courtRect.height) * 100}%`;
+function setPlayerToCell(player, cell) {
+  setCourtPosition(player, ((cell.col + 0.5) / 6) * 100, ((cell.row + 0.5) / 2) * 100);
 }
 
 function activePlayerEl() {
@@ -559,7 +508,7 @@ function updateTurnUI() {
   postHitMovementEl.hidden = turn.phase !== 'reposition';
   postHitMovementButtons.forEach((button) => {
     button.disabled = turn.phase !== 'reposition' || !postHitDestination(
-      Number(button.dataset.postHitCol), Number(button.dataset.postHitRow)
+      ...movementForView(button)
     );
   });
 }
@@ -631,8 +580,8 @@ function startDrag(event) {
   dragStartCell = getGridCell(active);
 
   const itemRect = active.getBoundingClientRect();
-  offsetX = event.clientX - itemRect.left;
-  offsetY = event.clientY - itemRect.top;
+  offsetX = event.clientX - itemRect.left - itemRect.width / 2;
+  offsetY = event.clientY - itemRect.top - itemRect.height / 2;
 
   active.setPointerCapture(event.pointerId);
 }
@@ -641,16 +590,14 @@ function moveDrag(event) {
   if (!active) return;
 
   const courtRect = court.getBoundingClientRect();
-  const limits = boundsFor(active, courtRect);
-
-  let nextX = event.clientX - courtRect.left - offsetX + active.offsetWidth / 2;
-  let nextY = event.clientY - courtRect.top - offsetY + active.offsetHeight / 2;
-
-  nextX = clamp(nextX, limits.minX, limits.maxX);
-  nextY = clamp(nextY, limits.minY, limits.maxY);
-
-  active.style.left = `${(nextX / courtRect.width) * 100}%`;
-  active.style.top = `${(nextY / courtRect.height) * 100}%`;
+  // Percentages refer to the inside of the frame, just like CSS positioning.
+  const width = court.clientWidth || courtRect.width;
+  const height = court.clientHeight || courtRect.height;
+  const x = clamp((event.clientX - courtRect.left - (court.clientLeft || 0) - offsetX) / width, 0, 1);
+  const y = clamp((event.clientY - courtRect.top - (court.clientTop || 0) - offsetY) / height, 0, 1);
+  const logicalX = courtOrientation === 'vertical' ? y : x;
+  const logicalY = courtOrientation === 'vertical' ? 1 - x : y;
+  setCourtPosition(active, logicalX * 100, logicalY * 100);
 
   const movement = Math.hypot(event.clientX - dragStartX, event.clientY - dragStartY);
   if (movement > 4) {
@@ -1061,6 +1008,7 @@ function resetPlayersToInitialPositions() {
   playerLeftEl.style.top = `${initialPositions.left.y}%`;
   playerRightEl.style.left = `${initialPositions.right.x}%`;
   playerRightEl.style.top = `${initialPositions.right.y}%`;
+  draggables.forEach(renderCourtPosition);
 }
 
 function clearHitResults() {
@@ -1445,7 +1393,7 @@ if (nameRightInput) {
 hitActionBtn.addEventListener('click', handleHit);
 postHitMovementButtons.forEach((button) => {
   button.addEventListener('click', () => finishPostHitMovement(
-    Number(button.dataset.postHitCol), Number(button.dataset.postHitRow)
+    ...movementForView(button)
   ));
 });
 
@@ -1495,3 +1443,8 @@ setServer('left', true);
 updateScoreUI();
 restoreGame();
 if (!new URLSearchParams(window.location?.search || '').has('room')) openGameSetup();
+
+orientationSelect.addEventListener('change', () => setCourtOrientation(orientationSelect.value));
+let savedOrientation = 'horizontal';
+try { savedOrientation = localStorage.getItem(ORIENTATION_STORAGE_KEY); } catch {}
+setCourtOrientation(savedOrientation, false);

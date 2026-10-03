@@ -127,6 +127,7 @@
     }
   }
   window.multiplayer = {
+    refreshControls,
     get active() { return online.active; },
     canAct: () => online.connected && !online.busy && Boolean(online.state),
     dispatch(type, payload = {}) {
