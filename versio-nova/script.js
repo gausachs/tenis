@@ -212,6 +212,13 @@ function restoreGame(sharedState = null, { notifyRecovery = false } = {}) {
       if (recoveryInput) recoveryInput.value = savedCard.recoveryPercent ?? '50';
     });
 
+    // Older saved matches marked every initially failed return as irreversible.
+    // Recheck those flags using the restored dice and available energy.
+    const pendingHit = lastHitSide && hitStateByPlayer[lastHitSide];
+    if (pendingHit?.forcedError && !pendingHit.resolved && pendingHit.statName !== 'Saque') {
+      updateReturnRescue(pendingHit, lastHitSide);
+    }
+
     renderBallValue();
     updatePointButtons();
     updateScoreUI();
@@ -833,6 +840,19 @@ function serveTargetReached(state) {
     rollDataFromRolls(state.rolls).total + state.statValue >= ballValue;
 }
 
+function updateReturnRescue(state, side) {
+  const total = rollDataFromRolls(state.rolls).total + state.statValue;
+  const negatives = state.rolls.filter(value => value === -1).length;
+  const bestTotal = total + Math.min(negatives, energyForPlayer(side));
+  const requiredTotal = ballValue - 1;
+  state.forcedError = bestTotal < requiredTotal;
+  state.outcome = state.forcedError
+    ? 'Tir erroni: no hi ha prou energia o daus negatius per salvar-lo. Prem Resoldre.'
+    : total < requiredTotal
+      ? `Pots salvar el cop gastant ${requiredTotal - total} d’energia per treure daus '−'.`
+      : '';
+}
+
 function renderHitDice(rolls = null) {
   const key = rolls ? rolls.join(',') : 'pending';
   if (hitPanelDiceEl.dataset.rolls === key) return;
@@ -1024,13 +1044,7 @@ function handleHit() {
     outcome: ''
   };
   const state = hitStateByPlayer[playerSide];
-  const isError = turn.phase === 'serve'
-    ? total < ballValue
-    : total <= ballValue - 2;
-  if (isError && turn.phase !== 'serve') {
-    state.forcedError = true;
-    state.outcome = 'Tir erroni. Prem Resoldre.';
-  }
+  if (turn.phase !== 'serve') updateReturnRescue(state, playerSide);
   const resultText = `${statName}: ${rollData.symbolsText} (${rollData.total}) + ${statValue} = ${total}`;
   resultEl.textContent = resultText;
   lastHitSide = playerSide;
