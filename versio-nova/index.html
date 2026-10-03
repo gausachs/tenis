@@ -124,9 +124,14 @@
           <header class="action-panel-heading"><span class="panel-step">01</span><h2 id="turn-title">Torn</h2></header>
           <p id="turn-status" class="turn-status">Torn: —</p>
           <p id="turn-hint" class="turn-hint" aria-live="polite">—</p>
-          <label id="serve-difficulty-control" class="serve-difficulty">Valor a aconseguir en el saque
-            <input id="serve-difficulty" type="number" min="1" step="1" value="1" aria-label="Valor a aconseguir en el saque" />
-          </label>
+          <div id="serve-difficulty-control" class="serve-difficulty">
+            <label for="serve-difficulty">Valor a aconseguir en el saque</label>
+            <div class="serve-stepper">
+              <button id="serve-decrease" type="button" aria-label="Disminuir el valor del saque">−</button>
+              <input id="serve-difficulty" type="number" inputmode="numeric" min="1" max="99" step="1" value="1" />
+              <button id="serve-increase" type="button" aria-label="Augmentar el valor del saque">+</button>
+            </div>
+          </div>
           <button id="move-to-ball" type="button" hidden>Apropar-se a la pilota</button>
           <button id="attempt-volley" type="button" hidden>Intentar volea</button>
           <button id="hit-action" type="button" disabled>Colpejar</button>

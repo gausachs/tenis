@@ -29,6 +29,8 @@ const movementConfirmBtn = document.getElementById('movement-confirm');
 const movementCancelBtn = document.getElementById('movement-cancel');
 const serveDifficultyControlEl = document.getElementById('serve-difficulty-control');
 const serveDifficultyInput = document.getElementById('serve-difficulty');
+const serveDecreaseBtn = document.getElementById('serve-decrease');
+const serveIncreaseBtn = document.getElementById('serve-increase');
 const newGameBtn = document.getElementById('new-game');
 const setupDialog = document.getElementById('setup-dialog');
 const setupForm = document.getElementById('setup-form');
@@ -469,7 +471,7 @@ function updateTurnUI() {
     ? `Actiu: ${label} · ${serveLabel}`
     : `Actiu: ${label}`;
   serveDifficultyControlEl.hidden = turn.phase !== 'serve';
-  serveDifficultyInput.disabled = turn.phase !== 'serve' || turn.ballPlaced;
+  updateServeDifficultyControls();
 
   if (matchWinner()) {
     turnStatusEl.textContent = `Partida acabada · Guanya ${getPlayerLabel(matchWinner())}`;
@@ -717,13 +719,28 @@ function renderBallValue() {
 }
 
 function setServeDifficulty() {
-  if (window.multiplayer?.dispatch('serveDifficulty', { value: Number(serveDifficultyInput.value) })) return;
   if (turn.phase !== 'serve' || turn.ballPlaced) return;
-
-  const value = Math.max(1, Number.parseInt(serveDifficultyInput.value, 10) || 1);
+  const value = clamp(Number.parseInt(serveDifficultyInput.value, 10) || 1, 1, 99);
   serveDifficultyInput.value = value.toString();
+  if (window.multiplayer?.dispatch('serveDifficulty', { value })) return;
   ballValue = value;
   renderBallValue();
+  updateServeDifficultyControls();
+}
+
+function updateServeDifficultyControls() {
+  const locked = turn.phase !== 'serve' || turn.ballPlaced || Boolean(matchWinner()) ||
+    (window.multiplayer?.active && !window.multiplayer.canAct());
+  const value = Number(serveDifficultyInput.value);
+  serveDifficultyInput.disabled = Boolean(locked);
+  serveDecreaseBtn.disabled = Boolean(locked) || value <= 1;
+  serveIncreaseBtn.disabled = Boolean(locked) || value >= 99;
+}
+
+function stepServeDifficulty(step) {
+  if (serveDifficultyInput.disabled) return;
+  serveDifficultyInput.value = String(clamp((Number.parseInt(serveDifficultyInput.value, 10) || 1) + step, 1, 99));
+  setServeDifficulty();
 }
 
 function normalizeStatInput(input) {
@@ -1388,6 +1405,8 @@ statInputs.forEach((input) => {
 
 serveDifficultyInput.addEventListener('input', setServeDifficulty);
 serveDifficultyInput.addEventListener('blur', setServeDifficulty);
+serveDecreaseBtn.addEventListener('click', () => stepServeDifficulty(-1));
+serveIncreaseBtn.addEventListener('click', () => stepServeDifficulty(1));
 
 if (nameLeftInput) {
   nameLeftInput.addEventListener('input', updatePointButtons);
