@@ -671,8 +671,10 @@ function endDrag(event) {
       }
     } else if (active.dataset.type === 'ball') {
       const endCell = getGridCell(active, courtRect);
+      // Dragging changes the displayed position, not the incoming ball used
+      // to check reachability and legal destinations.
+      setBallToCell(dragStartCell);
       if (window.multiplayer?.active) {
-        setBallToCell(dragStartCell);
         window.multiplayer.dispatch('placeBall', { cell: endCell });
       } else {
         placeShotBall(endCell, dragStartCell);

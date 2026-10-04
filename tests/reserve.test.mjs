@@ -35,6 +35,40 @@ function returning({ pool = [-1,0,1,1], energy = 1, difficulty = 2 } = {}) {
   return state;
 }
 
+test('dragging a legal volley target preserves reachability and allows the energy rescue in both views', () => {
+  for (const view of ['horizontal', 'vertical']) {
+    const state = returning({ difficulty: 2, energy: 2, pool: [-1,0,1,1] });
+    state.playerPositions.left = { left: '42%', top: '25%' };
+    state.playerCards[0].stats[3] = '3';
+    const { context: c, document: d } = client(state);
+    const ball = d.getElementById('ball');
+    ball.setPointerCapture = () => {};
+    ball.hasPointerCapture = () => false;
+    c.setCourtOrientation(view);
+    c.attemptVolley();
+    c.selectReserveDie(0);
+    assert.equal(c.getGameState().ballValue, 3);
+    assert.equal(c.getGameState().playerCards[0].energy, '1');
+    const target = { col: 5, row: 0 };
+    assert.equal(c.canPlaceReserveBall(target), true);
+    const before = plain(c.getGameState());
+    const rect = ball.getBoundingClientRect();
+    c.startDrag({ currentTarget: ball, pointerId: 1, clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 });
+    c.moveDrag({ clientX: (view === 'vertical' ? 0.75 : 5.5 / 6) * 600,
+      clientY: (view === 'vertical' ? 5.5 / 6 : 0.25) * 400 });
+    c.endDrag({ pointerId: 1 });
+    assert.equal(c.getGameState().turn.ballPlaced, true);
+    assert.deepEqual(plain(c.getGridCell(ball)), target);
+    assert.deepEqual(plain(c.getGameState()), runGame(before, { type: 'placeBall', cell: target }));
+    c.handleHit();
+    assert.equal(d.getElementById('hit-panel-remove').hidden, false);
+    c.handleRemoveMinus({ currentTarget: { closest: () => d.querySelector('.player-card[data-player="left"]') } });
+    c.resolveHit();
+    assert.equal(c.getGameState().turn.phase, 'reposition');
+    assert.equal(c.getGameState().playerCards[0].energy, '0');
+  }
+});
+
 test('reserve edition is isolated; each shot consumes exactly the selected die', () => {
   let state = runGame(null,null);
   assert.equal(state.variant, 'reserve');
