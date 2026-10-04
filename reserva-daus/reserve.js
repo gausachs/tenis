@@ -132,13 +132,15 @@ function renderReserve() {
     const box = document.getElementById(`reserve-${side}`);
     box.replaceChildren();
     const title = document.createElement('strong');
-    title.textContent = `${getPlayerLabel(side)} · Reserva del punt ${reserve.fatigue[side] + 1} · Fatiga +${reserve.fatigue[side]}`;
+    const remaining = reserve.pools[side].filter(value => value !== null).length;
+    title.textContent = `${getPlayerLabel(side)} · ${remaining}/4 daus disponibles · Fatiga +${reserve.fatigue[side]}`;
     box.append(title);
     const dice = document.createElement('div'); dice.className = 'reserve-dice';
     reserve.pools[side].forEach((value, index) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.textContent = value === null ? '—' : value === 1 ? '+1' : String(value);
+      button.className = value === null ? 'reserve-die spent' : 'reserve-die';
+      button.textContent = value === null ? 'Gastat' : value === 1 ? '+1' : String(value);
       button.setAttribute('aria-label', `${getPlayerLabel(side)}, dau ${index + 1}: ${value === null ? 'gastat' : button.textContent}`);
       button.setAttribute('aria-pressed', String(reserve.selected[side] === index));
       button.disabled = value === null || side !== turn.activeSide || turn.hitReady || !['serve', 'return'].includes(turn.phase) || Boolean(computerTurn || onlineLocked || matchWinner());
@@ -146,6 +148,12 @@ function renderReserve() {
       dice.append(button);
     });
     box.append(dice);
+    const status = document.createElement('p');
+    status.className = 'reserve-count';
+    status.textContent = remaining === 4
+      ? reserve.fatigue[side] === 0 ? 'Punt nou: reserva de 4 daus.' : 'Reserva renovada després de gastar els 4 daus.'
+      : `${4 - remaining} gastat${remaining === 3 ? '' : 's'} · ${remaining} restant${remaining === 1 ? '' : 's'}. Els daus gastats no es poden tornar a jugar.`;
+    box.append(status);
   }
   document.getElementById('reserve-notice').textContent = reserve.notice;
   const targets = document.getElementById('reserve-targets');

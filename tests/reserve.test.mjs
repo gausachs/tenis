@@ -84,7 +84,12 @@ test('reserve edition is isolated; each shot consumes exactly the selected die',
   assert.deepEqual(state.reserve.pools.left,[-1,0,null,1]);
   assert.deepEqual(state.reserve.pools.right,original.right);
   assert.throws(() => runGame(state,{type:'selectDie',index:2}));
-  const {context,stored} = client(state);
+  const {context,stored,document} = client(state);
+  const panel = document.getElementById('reserve-left');
+  assert.match(panel.children[0].textContent, /3\/4 daus disponibles/);
+  assert.equal(panel.children[1].children[2].textContent, 'Gastat');
+  assert.equal(panel.children[1].children[2].disabled, true);
+  assert.match(panel.children[2].textContent, /1 gastat · 3 restants/);
   context.saveGame();
   assert.ok(stored.has('tenis-reserva-daus-partida-v1'));
   assert.equal(stored.has('tenis-versio-nova-partida-v1'),false);
