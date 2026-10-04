@@ -808,8 +808,15 @@ function rollDataFromRolls(rolls) {
   };
 }
 
+function specialRoll(state) {
+  if (state?.rolls?.length !== 4) return 0;
+  if (state.rolls.every(value => value === 1)) return 1;
+  if (state.rolls.every(value => value === -1)) return -1;
+  return 0;
+}
+
 function canRescueHit(state, side) {
-  if (!state || state.resolved) return false;
+  if (!state || state.resolved || specialRoll(state)) return false;
   const total = rollDataFromRolls(state.rolls).total + state.statValue;
   const target = state.statName === 'Saque' ? ballValue : ballValue - 1;
   const negatives = state.rolls.filter(value => value === -1).length;
@@ -817,6 +824,12 @@ function canRescueHit(state, side) {
 }
 
 function updateReturnRescue(state, side) {
+  const special = specialRoll(state);
+  if (special) {
+    state.forcedError = special === -1;
+    state.outcome = special === 1 ? '++++: punt directe. Prem Resoldre.' : '−−−−: falta automàtica, sense millora amb energia. Prem Resoldre.';
+    return;
+  }
   const total = rollDataFromRolls(state.rolls).total + state.statValue;
   const negatives = state.rolls.filter(value => value === -1).length;
   const bestTotal = total + Math.min(negatives, energyForPlayer(side));
@@ -883,7 +896,9 @@ function updateHitPanelForPlayer(side) {
   hitPanelStatEl.textContent = `Colpeig: ${state.statName}`;
   renderHitDice(state.rolls);
   hitPanelTotalEl.textContent = `Total: ${rollData.total} + ${state.statValue} = ${total}`;
-  hitPanelInfoEl.textContent = state.outcome || `Daus '-' disponibles: ${minusCount}. Energia: ${energyValue}.`;
+  hitPanelInfoEl.textContent = specialRoll(state) === 1 ? '++++: punt directe. Prem Resoldre.'
+    : specialRoll(state) === -1 ? '−−−−: falta automàtica, sense millora amb energia. Prem Resoldre.'
+    : state.outcome || `Daus '-' disponibles: ${minusCount}. Energia: ${energyValue}.`;
   const canRemoveMinus = canRescueHit(state, side);
   hitPanelRemoveBtn.hidden = !canRemoveMinus;
   hitPanelRemoveBtn.disabled = !canRemoveMinus;
@@ -1129,6 +1144,19 @@ function resolveHit() {
 
   const state = hitStateByPlayer[lastHitSide];
   if (!state || state.resolved) return;
+
+  const special = specialRoll(state);
+  if (special) {
+    state.resolved = true;
+    if (special === -1 && turn.phase === 'serve' && turn.serveAttempt === 1) {
+      startSecondServe();
+      return;
+    }
+    awardPoint(special === 1 ? lastHitSide : oppositeSide(lastHitSide));
+    updateScoreUI();
+    resetCourtAfterPoint();
+    return;
+  }
 
   const rollData = rollDataFromRolls(state.rolls);
   const total = rollData.total + state.statValue;

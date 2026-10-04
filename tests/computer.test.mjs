@@ -54,6 +54,15 @@ test('computer varies serve risk, uses real dice, explains its turn and waits fo
   }
 });
 
+test('computer reports four positives as its own direct point', () => {
+  const game = opponent({ rolls: [1,1,1,1] });
+  game.next();
+  const state = game.context.getGameState();
+  assert.equal(state.score.right.points, 1);
+  assert.match(state.score.computerReport, /punt directe per a l’ordinador/);
+  assert.doesNotMatch(state.score.computerReport, /Cop fallat/);
+});
+
 test('failed first serve pauses before second serve; double fault awards the human a point', () => {
   const game = opponent({ rolls: [-1,-1,-1,-1], energy: 0 });
   game.next();
@@ -110,7 +119,7 @@ test('reloaded reports survive, and computer does not act in shared or two-perso
 
 test('return choices, movement and volleys obey the same rules in either orientation', () => {
   for (const orientation of ['horizontal', 'vertical']) for (const random of [0.1, 0.8]) {
-    const game = opponent({ phase: 'return', random, rolls: [1,1,1,1] });
+    const game = opponent({ phase: 'return', random, rolls: [1,1,1,0] });
     const state = JSON.parse(JSON.stringify(game.context.getGameState()));
     // Computer near the net, incoming ball at its baseline: volley is available.
     state.playerPositions.right = { left: '58%', top: '25%' };

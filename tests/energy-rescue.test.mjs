@@ -23,6 +23,30 @@ function hit({ rolls = [-1, 0, 0, 1], energy = 5, difficulty = 4 } = {}) {
 }
 const action = (state, type) => runGame(structuredClone(state), { type });
 
+test('Classic special rolls override all difficulties locally and on the server, without energy', () => {
+  for (const statName of ['Saque', 'Restada', 'General', 'Voleia']) {
+    for (const value of [-1, 1]) for (const attempt of [1, 2]) {
+      const { context, document, state } = hit({ rolls: Array(4).fill(value) });
+      state.turn.phase = statName === 'Saque' ? 'serve' : 'return';
+      state.turn.serveAttempt = attempt;
+      state.ballValue = value === 1 ? 99 : -5;
+      state.hitStateByPlayer.left.statName = statName;
+      context.restoreGame(structuredClone(state));
+      assert.equal(document.getElementById('hit-panel-remove').hidden, true);
+      assert.throws(() => action(state, 'removeMinus'));
+      context.resolveHit();
+      for (const result of [context.getGameState(), action(state, 'resolve')]) {
+        const firstFault = value === -1 && statName === 'Saque' && attempt === 1;
+        assert.equal(result.score.left.points, value === 1 ? 1 : 0);
+        assert.equal(result.score.right.points, value === -1 && !firstFault ? 1 : 0);
+        assert.equal(result.turn.phase, 'serve');
+        assert.equal(result.turn.serveAttempt, firstFault ? 2 : 1);
+        assert.equal(result.playerCards[0].energy, '5');
+      }
+    }
+  }
+});
+
 test('a failed return can be saved with one negative die and energy, locally and on the server', () => {
   const { context, document, state } = hit({ energy: 1 });
   assert.equal(state.hitStateByPlayer.left.forcedError, false);

@@ -134,8 +134,12 @@
           }
           lines.push(spent ? `Gasta ${spent} d’energia per anul·lar ${spent} dau(s) negatiu(s). Total final: ${rollDataFromRolls(hit.rolls).total + hit.statValue}.` : 'No gasta energia per millorar la tirada.');
           const wasFirstServe = turn.phase === 'serve' && turn.serveAttempt === 1;
+          const special = specialRoll(hit);
+          if (special === -1) lines.push('−−−−: falta automàtica; no es pot salvar amb energia.');
           resolveHit();
-          if (turn.phase === 'reposition' && turn.activeSide === 'right') {
+          if (special === 1) {
+            lines.push('++++: punt directe per a l’ordinador.');
+          } else if (turn.phase === 'reposition' && turn.activeSide === 'right') {
             lines.push(`Cop vàlid. Reps una pilota de dificultat ${ballValue}.`);
             reposition(risky, lines);
           } else if (wasFirstServe && turn.phase === 'serve' && turn.activeSide === 'right' && turn.serveAttempt === 2) {
