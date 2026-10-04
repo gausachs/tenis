@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ca" xml:lang="ca">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Tenis Fate — Reserva de daus</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="manual.css" />
+</head>
+<body>
+<nav class="manual-nav"><a href="./">Tornar al joc</a> · <a href="manual.pdf" download>Descarregar el PDF</a> · <a href="manual.md" download>Descarregar el text</a></nav>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#tenis-fate-reserva-de-daus"
+id="toc-tenis-fate-reserva-de-daus">Tenis Fate — Reserva de daus</a>
+<ul>
+<li><a href="#material-i-objectiu" id="toc-material-i-objectiu">1.
+Material i objectiu</a></li>
+<li><a href="#preparació" id="toc-preparació">2. Preparació</a></li>
+<li><a href="#la-reserva-de-quatre-daus"
+id="toc-la-reserva-de-quatre-daus">3. La reserva de quatre daus</a></li>
+<li><a href="#el-servei" id="toc-el-servei">4. El servei</a></li>
+<li><a href="#arribar-a-la-pilota" id="toc-arribar-a-la-pilota">5.
+Arribar a la pilota</a>
+<ul>
+<li><a href="#voleia" id="toc-voleia">Voleia</a></li>
+</ul></li>
+<li><a href="#calcular-els-destins-possibles"
+id="toc-calcular-els-destins-possibles">6. Calcular els destins
+possibles</a>
+<ul>
+<li><a href="#exemple-de-caselles-disponibles"
+id="toc-exemple-de-caselles-disponibles">Exemple de caselles
+disponibles</a></li>
+</ul></li>
+<li><a href="#fer-i-resoldre-el-cop" id="toc-fer-i-resoldre-el-cop">7.
+Fer i resoldre el cop</a></li>
+<li><a href="#marcador-i-recuperació" id="toc-marcador-i-recuperació">8.
+Marcador i recuperació</a></li>
+<li><a href="#ús-de-la-versió-digital"
+id="toc-ús-de-la-versió-digital">9. Ús de la versió digital</a></li>
+<li><a href="#full-de-consulta" id="toc-full-de-consulta">10. Full de
+consulta</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="tenis-fate-reserva-de-daus">Tenis Fate — Reserva de daus</h1>
+<p>Manual del joc de taula · Edició d’octubre de 2026</p>
+<p>Aquesta és una versió independent de Tenis Fate. Es pot jugar amb
+tauler, daus i paper, sense ordinador. Les regles del Clàssic es
+mantenen, excepte la gestió dels daus i la prohibició dels destins
+impossibles.</p>
+<h2 id="material-i-objectiu">1. Material i objectiu</h2>
+<ul>
+<li>Pista de sis columnes i dues files, amb la xarxa entre les columnes
+3 i 4.</li>
+<li>Dos tenistes, una pilota i un marcador de la fila del cop
+anterior.</li>
+<li>Quatre daus Fate per jugador (vuit en total), o paper per conservar
+les dues reserves. Cada dau té dues cares −1, dues cares 0 i dues cares
++1. Amb daus normals: 1–2 = −1, 3–4 = 0, 5–6 = +1.</li>
+<li>Marcadors d’energia, de punts, de jocs i de sets.</li>
+</ul>
+<p>Guanya el partit qui aconsegueix els sets acordats: un set, dos de
+tres o tres de cinc.</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>Zona</th>
+<th>Fons esquerre</th>
+<th>Centre esquerre</th>
+<th>Xarxa esquerra</th>
+<th>Xarxa dreta</th>
+<th>Centre dret</th>
+<th>Fons dret</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fila A</td>
+<td>A1: inici blau</td>
+<td>A2</td>
+<td>A3</td>
+<td>A4</td>
+<td>A5</td>
+<td>A6</td>
+</tr>
+<tr>
+<td>Fila B</td>
+<td>B1</td>
+<td>B2</td>
+<td>B3</td>
+<td>B4</td>
+<td>B5</td>
+<td>B6: inici vermell</td>
+</tr>
+</tbody>
+</table>
+<p>Cada tenista queda sempre dins del seu mig camp. La pilota pot
+compartir casella amb un tenista. Girar el tauler no canvia les regles:
+les caselles i les distàncies són les mateixes.</p>
+<h2 id="preparació">2. Preparació</h2>
+<p>Cada tenista comença amb Saque, Restada, General i Voleia a
+<strong>2</strong>, energia <strong>5</strong>, energia màxima
+<strong>5</strong> i recuperació <strong>50%</strong>. La versió digital
+conserva la possibilitat del Clàssic d’ajustar les habilitats entre 1 i
+4 en el mode local; per al partit estàndard i contra l’ordinador es
+comença amb totes a 2. No s’aplica la proposta d’habilitats màximes de
+3.</p>
+<p>Trieu qui serveix primer i la durada del partit. Col·loqueu els
+tenistes a A1 i B6, i la pilota amb el servidor. A cada nou punt, els
+tenistes tornen a aquestes posicions, però conserven l’energia que els
+queda.</p>
+<h2 id="la-reserva-de-quatre-daus">3. La reserva de quatre daus</h2>
+<p><strong>A l’inici de cada punt, cada jugador tira quatre daus una
+sola vegada i deixa els resultats visibles.</strong> Les reserves són
+públiques.</p>
+<p>A cada cop esculls <strong>un dau no gastat</strong> de la teva
+reserva. El resultat és:</p>
+<p><strong>Resultat del cop = habilitat corresponent + valor del dau
+escollit.</strong></p>
+<p>El dau queda gastat quan fas el cop, tant si és vàlid com si falla.
+Pots marcar-lo girant-lo a un costat o ratllant-lo al paper. Els altres
+daus conserven el valor inicial: no es tornen a tirar a cada cop.</p>
+<p>Quan hagis gastat els quatre, tira una nova reserva de quatre
+<strong>a l’inici del teu següent torn</strong> dins del mateix punt. Si
+el punt acaba abans, descarta tots els sobrants: tots dos jugadors tiren
+una reserva nova per al punt següent. La reposició automàtica no té cost
+d’energia.</p>
+<p><strong>Un segon saque pertany al mateix punt:</strong> el dau del
+primer intent ja està gastat; escull un altre dels que et queden. No
+recuperes ni els daus ni l’energia gastats en la primera falta.</p>
+<p>Exemple: tens −1, 0, +1 i +1. Amb General 2 pots aconseguir
+respectivament 1, 2, 3 o 3. Si gastes un +1, en queden −1, 0 i +1 per a
+cops posteriors.</p>
+<h2 id="el-servei">4. El servei</h2>
+<p>El servidor disposa de dos intents per punt i serveix durant tot el
+joc ordinari.</p>
+<ol type="1">
+<li>Tria la dificultat del saque (enter entre 1 i 99 en
+l’aplicació).</li>
+<li>Escull un dau de la reserva i suma Saque.</li>
+<li>Si el dau és −1 i gastar 1 d’energia permet salvar el servei, pots
+convertir-lo en 0.</li>
+<li>El servei és vàlid si el total iguala o supera la dificultat
+triada.</li>
+</ol>
+<p>El destí del servei és sempre la casella del rival. El valor que rep
+el rival és la <strong>dificultat triada</strong>, encara que el total
+sigui superior. Amb Saque 2 i un dau +1, el màxim resultat és 3.</p>
+<p>Si falla el primer intent, recol·loca els tenistes a A1 i B6 i torna
+la pilota al servidor. Pots canviar la dificultat per al segon intent.
+Si també falla, el receptor guanya el punt. La prohibició de caselles
+impossibles afecta les devolucions: al servei pots escollir una
+dificultat que no assoleixis i cometre falta.</p>
+<p>Després d’un servei vàlid, anota la fila des d’on has servit i fes el
+moviment posterior al cop. La primera devolució del receptor utilitza
+Restada, tret que prepari una volea.</p>
+<h2 id="arribar-a-la-pilota">5. Arribar a la pilota</h2>
+<p>Si ja ets a la casella de la pilota, no pagues cap cost.</p>
+<p>Per apropar-t’hi, compta els passos ortogonals necessaris: no hi ha
+diagonals. Amb una distància de <strong>n</strong> caselles, augmentes
+la dificultat en <strong>n</strong> i gastes <strong>màxim(0,
+n−1)</strong> d’energia. El primer pas és gratuït d’energia, però
+afegeix +1 de dificultat. Has de poder pagar tot el desplaçament.</p>
+<p>Abans d’apropar-t’hi pots renunciar al punt: el rival el guanya i tu
+recuperes 1 d’energia, sense superar el màxim. La pèrdua automàtica per
+manca de destins no dona aquesta recuperació voluntària.</p>
+<h3 id="voleia">Voleia</h3>
+<p>Pots interceptar la pilota sense desplaçar el tenista si la pilota és
+al teu camp, en una columna més pròxima al teu fons que la teva, i tens
+almenys 1 d’energia.</p>
+<p>Gasta 1 d’energia, porta la pilota a la casella del tenista i
+augmenta la dificultat en <strong>la meitat de la distància original,
+arrodonida a la baixa</strong>. Fes servir Voleia. Aquesta acció
+substitueix el moviment: no paguis també el desplaçament normal. Només
+es pot preparar una volea per torn.</p>
+<h2 id="calcular-els-destins-possibles">6. Calcular els destins
+possibles</h2>
+<p>Després d’arribar a la pilota o preparar una volea, conserva el valor
+de dificultat com a base i recorda la fila des d’on colpeges. Per a
+cadascuna de les sis caselles del camp rival, suma els mateixos
+modificadors del Clàssic:</p>
+<table>
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Condició</th>
+<th style="text-align: right;">Augment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>La fila del destí és diferent de la fila d’origen del cop
+anterior</td>
+<td style="text-align: right;">+1</td>
+</tr>
+<tr>
+<td>El destí és més pròxim al fons rival que el tenista rival</td>
+<td style="text-align: right;">+1</td>
+</tr>
+<tr>
+<td>Colpeges des del teu fons i envies al centre rival</td>
+<td style="text-align: right;">+1</td>
+</tr>
+<tr>
+<td>Colpeges des del teu fons i envies a la xarxa rival</td>
+<td style="text-align: right;">+2</td>
+</tr>
+<tr>
+<td>Colpeges des del teu centre i envies a la xarxa rival</td>
+<td style="text-align: right;">+1</td>
+</tr>
+</tbody>
+</table>
+<p>Les condicions compatibles se sumen. La dificultat no és només la
+distància entre pilota i rival.</p>
+<p>Per tornar la pilota has d’obtenir <strong>com a mínim dificultat
+−1</strong>, exactament com al Clàssic. No s’afegeix un límit general de
+dificultat 4 ni es modifiquen les habilitats.</p>
+<p>Una casella és possible amb un dau si el seu resultat arriba al
+mínim, o si hi arriba convertint un −1 en 0 amb 1 d’energia disponible
+<strong>després del moviment</strong>.</p>
+<ul>
+<li>Abans de triar dau, mira les caselles que pots assolir amb almenys
+un dels daus que et queden.</li>
+<li>Després de triar-lo, només pots enviar la pilota a les caselles
+assolibles amb aquell dau.</li>
+<li>Pots canviar el dau o el destí abans de fer el cop. Recalcula sempre
+des de la base: no acumules penalitzacions cada vegada que canvies de
+casella.</li>
+<li>Si un dau no et serveix però un altre sí, pots canviar-lo: no perds
+el punt pel fet d’haver seleccionat un dau baix.</li>
+<li>Si <strong>cap dau disponible permet cap destí</strong>, fins i tot
+comptant l’energia, perds el punt. No pots gastar la reserva inútilment
+per obtenir una tirada nova.</li>
+</ul>
+<p>La comprovació es fa quan ja ets a la pilota o has escollit com
+arribar-hi. Els costos del desplaçament o la volea ja s’han pagat i no
+es retornen si després no hi ha destí possible.</p>
+<h3 id="exemple-de-caselles-disponibles">Exemple de caselles
+disponibles</h3>
+<p>Tens General 2, reserva −1, 0, +1 i +1, i energia 1. Una vegada
+sumats moviment i posició, tres destins exigeixen dificultats 2, 3 i
+4:</p>
+<table>
+<thead>
+<tr>
+<th>Dau escollit</th>
+<th style="text-align: right;">Total</th>
+<th>D2 (mínim 1)</th>
+<th>D3 (mínim 2)</th>
+<th>D4 (mínim 3)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>−1</td>
+<td style="text-align: right;">1</td>
+<td>Sí</td>
+<td>Sí, gastant 1 energia</td>
+<td>No</td>
+</tr>
+<tr>
+<td>0</td>
+<td style="text-align: right;">2</td>
+<td>Sí</td>
+<td>Sí</td>
+<td>No</td>
+</tr>
+<tr>
+<td>+1</td>
+<td style="text-align: right;">3</td>
+<td>Sí</td>
+<td>Sí</td>
+<td>Sí</td>
+</tr>
+</tbody>
+</table>
+<p>Una casella de dificultat 5 seria impossible amb aquesta habilitat i
+aquesta reserva: exigiria un total mínim de 4.</p>
+<h2 id="fer-i-resoldre-el-cop">7. Fer i resoldre el cop</h2>
+<p>Escull el dau i el destí vàlid, suma l’habilitat i marca el dau com a
+gastat. No hi ha una tirada nova en aquest moment. Un cop jugat el dau,
+ja no pots canviar el destí ni substituir el dau.</p>
+<p>Si cal convertir el −1 en 0 per salvar el cop, paga 1 d’energia i
+resol. Només es permet gastar aquesta energia quan salva un cop que,
+sense la millora, fallaria. No pots gastar-la per reforçar un cop que ja
+és vàlid, ni per salvar-ne un que continuaria sent impossible.</p>
+<p>En una devolució vàlida, <strong>el total final es converteix en el
+nou valor de la pilota</strong>. Actualitza el marcador de fila amb la
+fila d’origen del teu cop, no amb la del destí.</p>
+<p>Després pots moure el tenista <strong>una casella ortogonal
+gratuïta</strong>, sense sortir del teu mig camp, o quedar-te al lloc.
+Aquest moviment no altera la dificultat. Passa el torn al rival.</p>
+<h2 id="marcador-i-recuperació">8. Marcador i recuperació</h2>
+<p>Els punts ordinaris són 0, 15, 30 i 40. A 40–40 hi ha iguals; cal
+guanyar dos punts de diferència. Guanya el set qui arriba a sis jocs amb
+dos de diferència. A 6–6 es disputa un tie-break: primer a 7 punts amb
+dos de diferència.</p>
+<p>En el tie-break, el servidor inicial fa un punt; després cada tenista
+serveix dos punts seguits, alternadament. Al set següent comença servint
+el contrari del servidor inicial del tie-break. Els daus es renoven a
+cada punt també al tie-break.</p>
+<p>Al final d’un joc de <strong>7 punts o menys</strong>, cada jugador
+recupera el 50% de l’energia que li falta, arrodonit a la baixa. Un joc
+de més de 7 punts no dona recuperació, llevat que tanqui el set. Al
+final d’un set sempre hi ha una recuperació. Si el joc tanca el set,
+s’aplica <strong>una sola vegada</strong>.</p>
+<p>Exemple: amb energia 1 i màxim 5, falten 4; recuperes 2 i quedes a 3.
+Amb energia 4, falta 1; recuperes 0. Anuncia sempre la recuperació de
+cadascú, inclòs el zero.</p>
+<h2 id="ús-de-la-versió-digital">9. Ús de la versió digital</h2>
+<p>Obre «Reserva de daus» i inicia una partida de dos jugadors o contra
+l’ordinador. També pots crear una partida compartida d’aquesta edició.
+Els enllaços i els guardats són independents dels del Clàssic.</p>
+<p>Prem un dels quatre daus de la teva reserva. Els gastats mostren «—».
+Després de moure’t o preparar la volea, toca una casella disponible o
+arrossega-hi la pilota. <strong>D</strong> indica la dificultat; les
+caselles ratllades amb <strong>×</strong> no es poden seleccionar. Prem
+«Jugar el dau» i després «Resoldre». Si cal salvar el cop, apareix el
+botó d’energia.</p>
+<p>Les fletxes del moviment final sempre segueixen l’orientació visible
+del tauler. Pots canviar entre horitzontal i vertical sense canviar les
+caselles lògiques ni els daus.</p>
+<p>Contra l’ordinador, controles el blau. El rival vermell combina
+decisions prudents i arriscades, escull daus de la seva reserva pública
+i explica el que ha fet en una finestra. Prem «Continuar» després de
+llegir-la. No coneix els resultats de les futures reserves.</p>
+<p>Pots imprimir aquest manual des del navegador o descarregar-ne la
+versió PDF. Per jugar sense pantalla, cada jugador anota els quatre
+resultats i ratlla un dau cada vegada que el consumeix.</p>
+<h2 id="full-de-consulta">10. Full de consulta</h2>
+<ol type="1">
+<li>Nou punt: posicions inicials i quatre daus nous per jugador.</li>
+<li>Nou torn: si has gastat els quatre daus, tira una reserva nova.</li>
+<li>Apropa’t, prepara una volea o renuncia.</li>
+<li>Calcula els destins possibles amb els daus i l’energia
+restants.</li>
+<li>Cap destí amb cap dau: punt per al rival.</li>
+<li>Tria dau i destí; consumeix el dau en fer el cop.</li>
+<li>Si cal i és possible, paga 1 energia per convertir −1 en 0.</li>
+<li>Resol, actualitza dificultat i fila d’origen; fes el moviment
+gratuït.</li>
+<li>Passa el torn. Conserva els daus no gastats fins al final del
+punt.</li>
+</ol>
+<p><strong>Full de reserva per copiar:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Jugador</th>
+<th>Dau 1</th>
+<th>Dau 2</th>
+<th>Dau 3</th>
+<th>Dau 4</th>
+<th>Energia</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Blau</td>
+<td>___</td>
+<td>___</td>
+<td>___</td>
+<td>___</td>
+<td>___ / 5</td>
+</tr>
+<tr>
+<td>Vermell</td>
+<td>___</td>
+<td>___</td>
+<td>___</td>
+<td>___</td>
+<td>___ / 5</td>
+</tr>
+</tbody>
+</table>
+<p>Dificultat base: ___ · Modificadors: ___ · Dificultat final: ___</p>
+<p>Habilitat: ___ · Dau: ___ · Millora amb energia: ___ · Total: ___</p>
+<p>Fila d’origen del cop anterior: ___ · Destí: ___ · Servidor: ___</p>
+</body>
+</html>

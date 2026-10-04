@@ -57,3 +57,14 @@ return JSON.parse(JSON.stringify(getGameState()));
 }
 `;
 await writeFile(new URL('../.generated/game-engine.mjs', import.meta.url), prefix + source + suffix);
+
+const reserveRules = await readFile(new URL('../reserva-daus/reserve.js', import.meta.url), 'utf8');
+const reserveSource = await readFile(new URL('../reserva-daus/script.js', import.meta.url), 'utf8');
+const reserveSuffix = suffix
+  .replace("case 'serveDifficulty':", `case 'selectDie':
+      requireRule(['serve', 'return'].includes(turn.phase) && !turn.hitReady && Number.isInteger(action.index) &&
+        action.index >= 0 && action.index < 4 && reserve.pools[turn.activeSide][action.index] !== null);
+      selectReserveDie(action.index); break;
+    case 'serveDifficulty':`)
+  .replace('placeShotBall(cell); break;', 'requireRule(canPlaceReserveBall(cell)); placeShotBall(cell); break;');
+await writeFile(new URL('../.generated/reserve-engine.mjs', import.meta.url), prefix + reserveRules + '\n' + reserveSource + reserveSuffix);

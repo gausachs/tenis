@@ -1,4 +1,5 @@
 import { runGame } from '../.generated/game-engine.mjs';
+import { runGame as runReserveGame } from '../.generated/reserve-engine.mjs';
 const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers });
 const tokenPattern = /^[a-f0-9]{64}$/;
@@ -56,6 +57,9 @@ export async function handleAPI(request, env) {
 
 async function handleRoomAPI(request, env) {
   const url = new URL(request.url);
+  const reserveEdition = url.pathname.startsWith('/api/reserve/');
+  if (reserveEdition) url.pathname = url.pathname.replace('/api/reserve/', '/api/');
+  const engine = reserveEdition ? runReserveGame : runGame;
   const db = env.DB;
   if (!db) return json({ error: 'El servei de partides encara no està configurat.' }, 503);
   const now = Date.now();
@@ -64,7 +68,7 @@ async function handleRoomAPI(request, env) {
       const { token, config = {} } = await readBody(request);
       if (!tokenPattern.test(token || '')) return json({ error: 'Sessió no vàlida.' }, 400);
       const id = makeID(), hash = await hashToken(token);
-      const state = runGame(null, null, config);
+      const state = engine(null, null, config);
       await db.batch([
         db.prepare('INSERT INTO rooms (id, state, revision, mode, created_at, updated_at) VALUES (?, ?, 0, ?, ?, ?)').bind(id, JSON.stringify(state), 'shared', now, now),
         db.prepare('INSERT INTO members (room_id, token_hash, last_seen) VALUES (?, ?, ?)').bind(id, hash, now),
@@ -76,6 +80,9 @@ async function handleRoomAPI(request, env) {
     const [, id, endpoint] = match;
     const room = await db.prepare('SELECT * FROM rooms WHERE id = ?').bind(id).first();
     if (!room) return json({ error: 'Aquesta partida no existeix. Revisa l’enllaç.' }, 404);
+    if ((JSON.parse(room.state).variant === 'reserve') !== reserveEdition) {
+      return json({ error: 'Aquesta partida pertany a una altra versió. Obre l’enllaç original del Clàssic o de Reserva de daus.' }, 409);
+    }
     const token = request.headers.get('authorization')?.replace(/^Bearer /, '') || '';
     if (!tokenPattern.test(token)) return json({ error: 'Torna a entrar a la partida.' }, 401);
     const hash = await hashToken(token);
@@ -91,7 +98,7 @@ async function handleRoomAPI(request, env) {
       const body = await readBody(request);
       if (!Number.isInteger(body.revision) || body.revision !== room.revision) return json({ error: 'Un altre usuari ja ha fet una acció. S’ha actualitzat la partida.', ...(await snapshot(db, room, now)) }, 409);
       let state;
-      try { state = runGame(JSON.parse(room.state), body.action); }
+      try { state = engine(JSON.parse(room.state), body.action); }
       catch (error) { return json({ error: error.message }, 422); }
       const result = await db.prepare('UPDATE rooms SET state = ?, revision = revision + 1, updated_at = ? WHERE id = ? AND revision = ?').bind(JSON.stringify(state), now, id, body.revision).run();
       if (result.meta.changes !== 1) {
