@@ -1,21 +1,23 @@
 // Independent rules and saved state for the consumable-dice edition.
 const reserve = {
   pools: { left: [], right: [] }, selected: { left: null, right: null },
-  batches: { left: 0, right: 0 }, notice: '', lossId: 0
+  batches: { left: 0, right: 0 }, fatigue: { left: 0, right: 0 }, notice: '', lossId: 0
 };
 
-function refillReserve(side) {
+function refillReserve(side, renewed = false) {
   reserve.pools[side] = rollFourFate().rolls;
   reserve.selected[side] = null;
   reserve.batches[side]++;
+  if (renewed) reserve.fatigue[side]++;
 }
 
 function resetReserves() {
+  reserve.fatigue = { left: 0, right: 0 };
   for (const side of ['left', 'right']) refillReserve(side);
 }
 
 function ensureReserve(side) {
-  if (!reserve.pools[side].some(value => value !== null)) refillReserve(side);
+  if (!reserve.pools[side].some(value => value !== null)) refillReserve(side, reserve.pools[side].length === 4);
 }
 
 function restoreReserve(state) {
@@ -29,6 +31,7 @@ function restoreReserve(state) {
     const index = state.reserve.selected?.[side];
     reserve.selected[side] = Number.isInteger(index) && index >= 0 && index < 4 && reserve.pools[side][index] !== null ? index : null;
     reserve.batches[side] = Number(state.reserve.batches?.[side]) || 1;
+    reserve.fatigue[side] = Math.max(0, Math.floor(Number(state.reserve.fatigue?.[side]) || 0));
   }
   reserve.notice = state.reserve.notice || '';
   reserve.lossId = Number(state.reserve.lossId) || 0;
@@ -63,7 +66,15 @@ function shotModifier(cell, playerCell = getGridCell(activePlayerEl()), side = t
 }
 
 function shotDifficulty(cell) {
-  return (turn.baseDifficulty ?? ballValue) + shotModifier(cell);
+  return (turn.baseDifficulty ?? ballValue) + shotModifier(cell) + reserve.fatigue[turn.activeSide];
+}
+
+function requiredHitTotal(state, side) {
+  return ballValue + (state.statName === 'Saque' ? reserve.fatigue[side] : 0);
+}
+
+function negativeServe(state) {
+  return state.statName === 'Saque' && (state.originalDie ?? state.rolls[0]) === -1;
 }
 
 function reserveTargets({ anyDie = false } = {}) {
@@ -75,7 +86,7 @@ function reserveTargets({ anyDie = false } = {}) {
   const result = [];
   for (let col = start; col < start + 3; col++) for (let row = 0; row < 2; row++) {
     const cell = { col, row }, difficulty = shotDifficulty(cell);
-    result.push({ cell, difficulty, available: maximum >= difficulty - 1 });
+    result.push({ cell, difficulty, available: maximum >= difficulty });
   }
   return result;
 }
@@ -121,7 +132,7 @@ function renderReserve() {
     const box = document.getElementById(`reserve-${side}`);
     box.replaceChildren();
     const title = document.createElement('strong');
-    title.textContent = `${getPlayerLabel(side)} · Reserva ${reserve.batches[side]}`;
+    title.textContent = `${getPlayerLabel(side)} · Reserva del punt ${reserve.fatigue[side] + 1} · Fatiga +${reserve.fatigue[side]}`;
     box.append(title);
     const dice = document.createElement('div'); dice.className = 'reserve-dice';
     reserve.pools[side].forEach((value, index) => {
@@ -160,6 +171,7 @@ function renderReserve() {
   help.textContent = turn.phase === 'reposition' ? 'Cop resolt. Tria el moviment gratuït o queda’t al lloc.'
     : turn.phase === 'finished' ? 'Partit acabat. Pots començar una nova partida.'
     : turn.hitReady ? 'Dau gastat. Revisa el resultat i prem Resoldre.'
+    : turn.phase === 'serve' ? 'Tria un dau: el −1 és sempre falta de servei i no es pot corregir amb energia. Cal igualar la dificultat més la fatiga.'
     : chosenDie() === null ? 'Tria un dau de la teva reserva. Les caselles indiquen la dificultat (D); × vol dir impossible.'
       : `Dau triat: ${chosenDie() > 0 ? '+' : ''}${chosenDie()}. Les caselles disponibles ja compten l’energia per anul·lar un −1.`;
 }

@@ -227,7 +227,7 @@ function restoreGame(sharedState = null, { notifyRecovery = false } = {}) {
     // Older saved matches marked every initially failed return as irreversible.
     // Recheck those flags using the restored dice and available energy.
     const pendingHit = lastHitSide && hitStateByPlayer[lastHitSide];
-    if (pendingHit?.forcedError && !pendingHit.resolved && pendingHit.statName !== 'Saque') {
+    if (pendingHit && !pendingHit.resolved && pendingHit.statName !== 'Saque') {
       updateReturnRescue(pendingHit, lastHitSide);
     }
 
@@ -720,7 +720,7 @@ function placeShotBall(endCell, startCell = getGridCell(ballEl)) {
           const increase = shotModifier(endCell);
 
           turn.positionModifier = increase;
-          ballValue = turn.baseDifficulty + increase;
+          ballValue = turn.baseDifficulty + increase + reserve.fatigue[turn.activeSide];
           renderBallValue();
         }
 
@@ -817,9 +817,9 @@ function rollDataFromRolls(rolls) {
 }
 
 function canRescueHit(state, side) {
-  if (!state || state.resolved) return false;
+  if (!state || state.resolved || state.statName === 'Saque') return false;
   const total = rollDataFromRolls(state.rolls).total + state.statValue;
-  const target = state.statName === 'Saque' ? ballValue : ballValue - 1;
+  const target = requiredHitTotal(state, side);
   const negatives = state.rolls.filter(value => value === -1).length;
   return total < target && total + Math.min(negatives, energyForPlayer(side)) >= target;
 }
@@ -828,7 +828,7 @@ function updateReturnRescue(state, side) {
   const total = rollDataFromRolls(state.rolls).total + state.statValue;
   const negatives = state.rolls.filter(value => value === -1).length;
   const bestTotal = total + Math.min(negatives, energyForPlayer(side));
-  const requiredTotal = ballValue - 1;
+  const requiredTotal = requiredHitTotal(state, side);
   state.forcedError = bestTotal < requiredTotal;
   state.outcome = state.forcedError
     ? 'Tir erroni: no hi ha prou energia o daus negatius per salvar-lo. Prem Resoldre.'
@@ -891,7 +891,10 @@ function updateHitPanelForPlayer(side) {
   hitPanelStatEl.textContent = `Colpeig: ${state.statName}`;
   renderHitDice(state.rolls);
   hitPanelTotalEl.textContent = `Total: ${rollData.total} + ${state.statValue} = ${total}`;
-  hitPanelInfoEl.textContent = state.outcome || `Daus '-' disponibles: ${minusCount}. Energia: ${energyValue}.`;
+  const explanation = negativeServe(state)
+    ? 'Dau −1: falta de servei. No es pot gastar energia. Prem Resoldre.'
+    : state.outcome || `Daus '-' disponibles: ${minusCount}. Energia: ${energyValue}.`;
+  hitPanelInfoEl.textContent = `Cal igualar ${requiredHitTotal(state, side)} (fatiga +${reserve.fatigue[side]} inclosa). ${explanation}`;
   const canRemoveMinus = canRescueHit(state, side);
   hitPanelRemoveBtn.hidden = !canRemoveMinus;
   hitPanelRemoveBtn.disabled = !canRemoveMinus;
@@ -1027,12 +1030,14 @@ function handleHit() {
     statName,
     statValue,
     rolls: [...rollData.rolls],
+    originalDie: value,
     resolved: false,
     forcedError: false,
     outcome: ''
   };
   const state = hitStateByPlayer[playerSide];
   if (turn.phase !== 'serve') updateReturnRescue(state, playerSide);
+  else if (negativeServe(state)) state.outcome = 'Dau −1: falta de servei. No es pot gastar energia. Prem Resoldre.';
   const resultText = `${statName}: ${rollData.symbolsText} (${rollData.total}) + ${statValue} = ${total}`;
   resultEl.textContent = resultText;
   lastHitSide = playerSide;
@@ -1149,9 +1154,9 @@ function resolveHit() {
   const energy = Math.max(0, Number.parseInt(energyInput?.value, 10) || 0);
   const removableMinuses = state.rolls.filter((value) => value === -1).length;
   const bestPossibleTotal = total + Math.min(removableMinuses, energy);
-  const requiredTotal = ballValue - 1;
+  const requiredTotal = requiredHitTotal(state, lastHitSide);
 
-  if (turn.phase === 'serve' && total < ballValue) {
+  if (turn.phase === 'serve' && (negativeServe(state) || total < requiredTotal)) {
     state.resolved = true;
     if (turn.serveAttempt === 1) {
       startSecondServe();
@@ -1165,7 +1170,7 @@ function resolveHit() {
     return;
   }
 
-  if (total <= ballValue - 2) {
+  if (total < requiredTotal) {
     if (!state.forcedError && bestPossibleTotal >= requiredTotal) {
       const improvementsNeeded = requiredTotal - total;
       state.outcome = `El cop encara es pot salvar: cal treure ${improvementsNeeded} dau(s) '-' gastant energia.`;

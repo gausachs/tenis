@@ -53,8 +53,8 @@
     const options = [];
     for (const target of reserveTargets({ anyDie: true })) {
       reserve.pools.right.forEach((value, index) => {
-        if (value === null || dieMaximum(value, 'right') < target.difficulty - 1) return;
-        const energy = reserveStat('right') + value < target.difficulty - 1 ? 1 : 0;
+        if (value === null || dieMaximum(value, 'right') < target.difficulty) return;
+        const energy = reserveStat('right') + value < target.difficulty ? 1 : 0;
         const quality = risky
           ? distance(target.cell, opponent) * 3 + value - energy
           : -energy * 6 - value * 2 - target.difficulty + distance(target.cell, opponent) * .25;
@@ -90,6 +90,7 @@
     const lines = [risky ? 'Decisió arriscada: busca pressionar i avançar cap a la xarxa.'
       : 'Decisió prudent: prioritza un cop assequible i una posició central.'];
     lines.push(`Reserva inicial: ${reserve.pools.right.map(v => v === null ? 'gastat' : v > 0 ? '+1' : String(v)).join(', ')}.`);
+    lines.push(`Fatiga d’aquest punt: +${reserve.fatigue.right} a la dificultat dels seus cops.`);
     try {
       if (turn.phase === 'reposition') {
         reposition(risky, lines);
@@ -120,9 +121,9 @@
           if (turn.phase === 'serve') {
             const dice = reserve.pools.right.map((value,index) => ({ value,index })).filter(die => die.value !== null);
             dice.sort((a,b) => risky ? b.value - a.value : a.value - b.value);
-            const chosen = dice.find(die => dieMaximum(die.value, 'right', energyForPlayer('right'), stat('Saque')) >= 1) || dice[0];
+            const chosen = dice.find(die => die.value >= 0 && stat('Saque') + die.value >= 1 + reserve.fatigue.right) || dice[0];
             selectReserveDie(chosen.index);
-            const value = risky ? Math.max(1, stat('Saque') + chosen.value) : 1;
+            const value = risky ? Math.max(1, stat('Saque') + chosen.value - reserve.fatigue.right) : 1;
             serveDifficultyInput.value = String(value);
             setServeDifficulty();
             lines.push(`${turn.serveAttempt === 2 ? 'Segon' : 'Primer'} saque: tria dificultat ${value}; envia la pilota a la casella del rival.`);
@@ -144,7 +145,8 @@
         }
         const hit = hitStateByPlayer.right;
         if (hit && !hit.resolved) {
-          lines.push(`${hit.statName}: habilitat ${hit.statValue}. Dau utilitzat: ${hit.rolls.map(v => v > 0 ? '+1' : String(v)).join(', ')}. Total inicial: ${rollDataFromRolls(hit.rolls).total + hit.statValue}. Dificultat: ${ballValue}.`);
+          lines.push(`${hit.statName}: habilitat ${hit.statValue}. Dau utilitzat: ${hit.rolls.map(v => v > 0 ? '+1' : String(v)).join(', ')}. Total inicial: ${rollDataFromRolls(hit.rolls).total + hit.statValue}. Dificultat a igualar: ${requiredHitTotal(hit, 'right')}.`);
+          if (negativeServe(hit)) lines.push('El −1 és falta de servei obligatòria i no es pot corregir amb energia.');
           let spent = 0;
           while (canRescueHit(hit, 'right') && spent < 4) {
             handleRemoveMinus({ currentTarget: { closest: () => document.querySelector('.player-card[data-player="right"]') } });

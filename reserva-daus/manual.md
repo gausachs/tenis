@@ -2,7 +2,7 @@
 
 Manual del joc de taula · Edició d’octubre de 2026
 
-Aquesta és una versió independent de Tenis Fate. Es pot jugar amb tauler, daus i paper, sense ordinador. Les regles del Clàssic es mantenen, excepte la gestió dels daus i la prohibició dels destins impossibles.
+Aquesta és una versió independent de Tenis Fate. Es pot jugar amb tauler, daus i paper, sense ordinador. Utilitza reserves de daus consumibles, fatiga progressiva i destins limitats als cops possibles. Cal igualar la dificultat de qualsevol cop, i un −1 al servei sempre és falta.
 
 ## 1. Material i objectiu
 
@@ -36,7 +36,13 @@ A cada cop esculls **un dau no gastat** de la teva reserva. El resultat és:
 
 El dau queda gastat quan fas el cop, tant si és vàlid com si falla. Pots marcar-lo girant-lo a un costat o ratllant-lo al paper. Els altres daus conserven el valor inicial: no es tornen a tirar a cada cop.
 
-Quan hagis gastat els quatre, tira una nova reserva de quatre **a l’inici del teu següent torn** dins del mateix punt. Si el punt acaba abans, descarta tots els sobrants: tots dos jugadors tiren una reserva nova per al punt següent. La reposició automàtica no té cost d’energia.
+Quan hagis gastat els quatre, tira una nova reserva de quatre **a l’inici del teu següent torn** dins del mateix punt. Aquesta renovació afegeix **+1 de fatiga** al teu tenista. Si el punt acaba abans, descarta tots els sobrants: tots dos jugadors tiren una reserva nova per al punt següent i tornen a fatiga 0. La reposició no costa energia, però augmenta la dificultat dels teus cops.
+
+### Fatiga progressiva
+
+Cada jugador compta la seva fatiga per separat. La primera reserva del punt té fatiga 0; la segona, +1; la tercera, +2; i així successivament. Suma la fatiga actual **una sola vegada a la dificultat de cada cop**, després del moviment i dels modificadors de destí. No la sumis de nou cada vegada que canviïs de casella o de dau abans de colpejar.
+
+La fatiga afecta tots els tipus de cop, inclòs un servei si s’arriba a renovar la reserva abans de fer-lo. No es gasta ni es redueix amb energia. **Tota la fatiga desapareix quan acaba el punt**, també per doble falta, renúncia o manca de destins. El segon servei continua dins del mateix punt i no l’elimina.
 
 **Un segon saque pertany al mateix punt:** el dau del primer intent ja està gastat; escull un altre dels que et queden. No recuperes ni els daus ni l’energia gastats en la primera falta.
 
@@ -48,8 +54,8 @@ El servidor disposa de dos intents per punt i serveix durant tot el joc ordinari
 
 1. Tria la dificultat del saque (enter entre 1 i 99 en l’aplicació).
 2. Escull un dau de la reserva i suma Saque.
-3. Si el dau és −1 i gastar 1 d’energia permet salvar el servei, pots convertir-lo en 0.
-4. El servei és vàlid si el total iguala o supera la dificultat triada.
+3. Si el dau és **−1, és falta sempre**, encara que l’habilitat sigui alta i el total arribés a la dificultat. **No pots gastar energia per convertir-lo en 0 al servei.**
+4. Amb un dau 0 o +1, el servei és vàlid si el total iguala o supera la dificultat triada més la fatiga actual.
 
 El destí del servei és sempre la casella del rival. El valor que rep el rival és la **dificultat triada**, encara que el total sigui superior. Amb Saque 2 i un dau +1, el màxim resultat és 3.
 
@@ -83,9 +89,11 @@ Després d’arribar a la pilota o preparar una volea, conserva el valor de difi
 | Colpeges des del teu fons i envies a la xarxa rival | +2 |
 | Colpeges des del teu centre i envies a la xarxa rival | +1 |
 
-Les condicions compatibles se sumen. La dificultat no és només la distància entre pilota i rival.
+Les condicions compatibles se sumen. Afegeix també la fatiga actual del tenista que colpeja. La dificultat no és només la distància entre pilota i rival.
 
-Per tornar la pilota has d’obtenir **com a mínim dificultat −1**, exactament com al Clàssic. No s’afegeix un límit general de dificultat 4 ni es modifiquen les habilitats.
+**Dificultat final = valor de la pilota després del moviment o la volea + modificadors de destí + fatiga pròpia.**
+
+Per tornar la pilota has d’obtenir **com a mínim la dificultat final**. Quedar-se un punt per sota ja és error. No s’afegeix un límit general de dificultat 4 ni es modifiquen les habilitats. En una devolució vàlida, el valor de la pilota no pot baixar: pot quedar igual si iguales exactament, o pujar si el resultat és superior.
 
 Una casella és possible amb un dau si el seu resultat arriba al mínim, o si hi arriba convertint un −1 en 0 amb 1 d’energia disponible **després del moviment**.
 
@@ -99,21 +107,21 @@ La comprovació es fa quan ja ets a la pilota o has escollit com arribar-hi. Els
 
 ### Exemple de caselles disponibles
 
-Tens General 2, reserva −1, 0, +1 i +1, i energia 1. Una vegada sumats moviment i posició, tres destins exigeixen dificultats 2, 3 i 4:
+Tens General 2, reserva −1, 0, +1 i +1, energia 1 i fatiga 0. Una vegada sumats moviment i posició, tres destins exigeixen dificultats 1, 2 i 3:
 
-| Dau escollit | Total | D2 (mínim 1) | D3 (mínim 2) | D4 (mínim 3) |
+| Dau escollit | Total | D1 (mínim 1) | D2 (mínim 2) | D3 (mínim 3) |
 |---|---:|---|---|---|
 | −1 | 1 | Sí | Sí, gastant 1 energia | No |
 | 0 | 2 | Sí | Sí | No |
 | +1 | 3 | Sí | Sí | Sí |
 
-Una casella de dificultat 5 seria impossible amb aquesta habilitat i aquesta reserva: exigiria un total mínim de 4.
+Una casella de dificultat 4 seria impossible amb aquesta habilitat i aquesta reserva: exigiria un total mínim de 4. Amb fatiga +1, les tres caselles de l’exemple passarien a D2, D3 i D4: la tercera deixaria d’estar disponible.
 
 ## 7. Fer i resoldre el cop
 
 Escull el dau i el destí vàlid, suma l’habilitat i marca el dau com a gastat. No hi ha una tirada nova en aquest moment. Un cop jugat el dau, ja no pots canviar el destí ni substituir el dau.
 
-Si cal convertir el −1 en 0 per salvar el cop, paga 1 d’energia i resol. Només es permet gastar aquesta energia quan salva un cop que, sense la millora, fallaria. No pots gastar-la per reforçar un cop que ja és vàlid, ni per salvar-ne un que continuaria sent impossible.
+En una devolució, si cal convertir el −1 en 0 per igualar la dificultat i salvar el cop, paga 1 d’energia i resol. Només es permet gastar aquesta energia quan salva un cop que, sense la millora, fallaria. No pots gastar-la per reforçar un cop que ja és vàlid, ni per salvar-ne un que continuaria sent impossible. **Aquesta millora està prohibida al servei: el −1 sempre és falta.**
 
 En una devolució vàlida, **el total final es converteix en el nou valor de la pilota**. Actualitza el marcador de fila amb la fila d’origen del teu cop, no amb la del destí.
 
@@ -133,7 +141,7 @@ Exemple: amb energia 1 i màxim 5, falten 4; recuperes 2 i quedes a 3. Amb energ
 
 Obre «Reserva de daus» i inicia una partida de dos jugadors o contra l’ordinador. També pots crear una partida compartida d’aquesta edició. Els enllaços i els guardats són independents dels del Clàssic.
 
-Prem un dels quatre daus de la teva reserva. Els gastats mostren «—». Després de moure’t o preparar la volea, toca una casella disponible o arrossega-hi la pilota. **D** indica la dificultat; les caselles ratllades amb **×** no es poden seleccionar. Prem «Jugar el dau» i després «Resoldre». Si cal salvar el cop, apareix el botó d’energia.
+Prem un dels quatre daus de la teva reserva. Els gastats mostren «—» i al costat de cada reserva s’indica la fatiga. Després de moure’t o preparar la volea, toca una casella disponible o arrossega-hi la pilota. **D** indica la dificultat final, amb la fatiga inclosa; les caselles ratllades amb **×** no es poden seleccionar. Prem «Jugar el dau» i després «Resoldre». Si cal salvar una devolució, apareix el botó d’energia. Al servei no apareix.
 
 Les fletxes del moviment final sempre segueixen l’orientació visible del tauler. Pots canviar entre horitzontal i vertical sense canviar les caselles lògiques ni els daus.
 
@@ -143,13 +151,13 @@ Pots imprimir aquest manual des del navegador o descarregar-ne la versió PDF. P
 
 ## 10. Full de consulta
 
-1. Nou punt: posicions inicials i quatre daus nous per jugador.
-2. Nou torn: si has gastat els quatre daus, tira una reserva nova.
+1. Nou punt: posicions inicials, quatre daus nous per jugador i fatiga 0 per a tots dos.
+2. Nou torn: si has gastat els quatre daus, tira una reserva nova i augmenta la teva fatiga en +1.
 3. Apropa’t, prepara una volea o renuncia.
 4. Calcula els destins possibles amb els daus i l’energia restants.
 5. Cap destí amb cap dau: punt per al rival.
 6. Tria dau i destí; consumeix el dau en fer el cop.
-7. Si cal i és possible, paga 1 energia per convertir −1 en 0.
+7. Al servei, −1 és falta sense millora. En una devolució, si permet igualar la dificultat, paga 1 energia per convertir −1 en 0.
 8. Resol, actualitza dificultat i fila d’origen; fes el moviment gratuït.
 9. Passa el torn. Conserva els daus no gastats fins al final del punt.
 
@@ -160,7 +168,7 @@ Pots imprimir aquest manual des del navegador o descarregar-ne la versió PDF. P
 | Blau | ___ | ___ | ___ | ___ | ___ / 5 |
 | Vermell | ___ | ___ | ___ | ___ | ___ / 5 |
 
-Dificultat base: ___ · Modificadors: ___ · Dificultat final: ___
+Dificultat base: ___ · Modificadors: ___ · Fatiga pròpia: ___ · Dificultat final a igualar: ___
 
 Habilitat: ___ · Dau: ___ · Millora amb energia: ___ · Total: ___
 

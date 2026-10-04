@@ -88,6 +88,8 @@ test('last die refills only on the next own turn, without changing the opponent 
   const right = plain(c.getGameState().reserve.pools.right);
   c.beginTurn('left','serve');
   assert.equal(c.getGameState().reserve.pools.left.filter(v=>v!==null).length,4);
+  assert.equal(c.getGameState().reserve.fatigue.left,1);
+  assert.equal(c.getGameState().reserve.fatigue.right,0);
   assert.deepEqual(plain(c.getGameState().reserve.pools.right),right);
 });
 
@@ -101,11 +103,12 @@ test('destinations follow current position penalties and selected die, including
   assert.equal(at(5,1).difficulty,3);
   assert.equal(at(4,0).difficulty,3);
   assert.equal(at(3,0).difficulty,4);
-  assert.equal(at(5,1).available,true,'negative die may use one energy to reach 2');
+  assert.equal(at(5,0).available,true,'negative die may use one energy to reach 2');
+  assert.equal(at(5,1).available,false,'a result one below difficulty is no longer valid');
   assert.equal(at(3,0).available,false);
   let selected = runGame(state,{type:'selectDie',index:0});
   assert.throws(()=>runGame(selected,{type:'placeBall',cell:{col:3,row:0}}));
-  selected = runGame(selected,{type:'placeBall',cell:{col:5,row:1}});
+  selected = runGame(selected,{type:'placeBall',cell:{col:5,row:0}});
   selected = runGame(selected,{type:'hit'});
   selected = runGame(selected,{type:'removeMinus'});
   assert.equal(selected.playerCards[0].energy,'0');
@@ -113,8 +116,9 @@ test('destinations follow current position penalties and selected die, including
   assert.equal(runGame(selected,{type:'resolve'}).turn.phase,'reposition');
   c.selectReserveDie(2);
   targets = plain(c.reserveTargets());
-  assert.equal(at(3,0).available,true);
-  c.placeShotBall({col:3,row:0});
+  assert.equal(at(3,0).available,false);
+  assert.equal(at(4,0).available,true);
+  c.placeShotBall({col:4,row:0});
   c.selectReserveDie(0);
   assert.equal(c.getGameState().ballValue,2,'changing die restores incoming difficulty');
   assert.equal(c.getGameState().turn.ballPlaced,false);
@@ -122,7 +126,7 @@ test('destinations follow current position penalties and selected die, including
 });
 
 test('no legal target loses exactly one point, but a bad selection does not', () => {
-  const {context:c} = client(returning({pool:[-1,0,1,1],energy:0,difficulty:4}));
+  const {context:c} = client(returning({pool:[-1,0,1,1],energy:0,difficulty:3}));
   c.selectReserveDie(0); c.settleReserveTurn();
   assert.equal(c.getGameState().score.right.points,0,'other dice can still save the ball');
   const impossible = returning({pool:[-1,-1,-1,-1],energy:0,difficulty:4});
@@ -183,4 +187,61 @@ test('shared reserve rooms use their own rules and reject cross-edition access',
     const old=await (await call('/api/rooms',{token})).json();
     assert.equal((await call(`/api/reserve/rooms/${old.room}/join`,{})).status,409);
   } finally {db.close();}
+});
+
+test('negative serves are always faults, consume the die and forbid energy even with high skill', () => {
+  let state=runGame(null,null);
+  state.reserve.pools.left=[-1,-1,0,1];
+  state.playerCards[0].stats[0]='4';
+  for (const index of [0,1]) {
+    state=runGame(state,{type:'selectDie',index});
+    state=runGame(state,{type:'hit'});
+    assert.equal(state.hitStateByPlayer.left.originalDie,-1);
+    const {context,document}=client(state);
+    assert.equal(document.getElementById('hit-panel-remove').hidden,true);
+    context.handleRemoveMinus({currentTarget:{closest:()=>document.querySelector('.player-card[data-player="left"]')}});
+    assert.equal(context.getGameState().playerCards[0].energy,'5');
+    assert.throws(()=>runGame(state,{type:'removeMinus'}));
+    state=runGame(state,{type:'resolve'});
+    if(index===0) {
+      assert.equal(state.turn.serveAttempt,2);
+      assert.deepEqual(state.reserve.pools.left,[null,-1,0,1]);
+    }
+  }
+  assert.equal(state.score.right.points,1);
+  assert.equal(state.playerCards[0].energy,'5');
+  assert.deepEqual(state.reserve.fatigue,{left:0,right:0});
+});
+
+test('all return types must equal difficulty; equal succeeds and one below loses', () => {
+  for (const statName of ['Restada','General','Voleia']) for (const total of [2,3]) {
+    const state=returning({difficulty:3,energy:0});
+    state.turn.hitReady=true; state.turn.ballPlaced=true; state.lastHitSide='left';
+    state.hitStateByPlayer.left={statName,statValue:2,rolls:[total-2],originalDie:total-2,resolved:false,forcedError:false,outcome:''};
+    const result=runGame(state,{type:'resolve'});
+    assert.equal(result.score.right.points,total===2?1:0);
+    if(total===3) { assert.equal(result.turn.phase,'reposition'); assert.equal(result.ballValue,3); }
+  }
+});
+
+test('fatigue grows per own refill, is included once in targets, survives reload and resets each point', () => {
+  const state=returning({difficulty:1,pool:[1,1,1,1]});
+  state.reserve.fatigue={left:1,right:2};
+  const {context:c}=client(state);
+  c.selectReserveDie(0);
+  assert.equal(c.shotDifficulty({col:5,row:0}),2);
+  c.placeShotBall({col:5,row:0});
+  assert.equal(c.getGameState().ballValue,2);
+  c.placeShotBall({col:4,row:0});
+  assert.equal(c.getGameState().ballValue,3);
+  c.placeShotBall({col:5,row:0});
+  assert.equal(c.getGameState().ballValue,2,'fatigue is not added again when changing target');
+  assert.deepEqual(plain(client(plain(c.getGameState())).context.getGameState().reserve.fatigue),{left:1,right:2});
+  c.resetCourtAfterPoint();
+  assert.deepEqual(plain(c.getGameState().reserve.fatigue),{left:0,right:0});
+  const exhausted=returning({pool:[null,null,null,null],difficulty:1});
+  exhausted.reserve.fatigue={left:1,right:0};
+  c.restoreGame(exhausted); c.beginTurn('left','return');
+  assert.equal(c.getGameState().reserve.fatigue.left,2);
+  assert.equal(c.getGameState().reserve.fatigue.right,0);
 });
