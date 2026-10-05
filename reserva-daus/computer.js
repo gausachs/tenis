@@ -121,12 +121,9 @@
           if (turn.phase === 'serve') {
             const dice = reserve.pools.right.map((value,index) => ({ value,index })).filter(die => die.value !== null);
             dice.sort((a,b) => risky ? b.value - a.value : a.value - b.value);
-            const chosen = dice.find(die => die.value >= 0 && stat('Saque') + die.value >= 1 + reserve.fatigue.right) || dice[0];
+            const chosen = dice.find(die => die.value >= 0 && stat('Saque') + die.value >= 2) || dice[0];
             selectReserveDie(chosen.index);
-            const value = risky ? Math.max(1, stat('Saque') + chosen.value - reserve.fatigue.right) : 1;
-            serveDifficultyInput.value = String(value);
-            setServeDifficulty();
-            lines.push(`${turn.serveAttempt === 2 ? 'Segon' : 'Primer'} saque: tria dificultat ${value}; envia la pilota a la casella del rival.`);
+            lines.push(`Saque ${stat('Saque')} + dau ${chosen.value} = ${stat('Saque') + chosen.value}. Aquest és el valor del servei; envia la pilota a la casella del rival.`);
           } else if (!turn.ballPlaced) {
             const choice = chooseReserveShot(risky);
             if (!choice) {
@@ -153,13 +150,10 @@
             spent++;
           }
           lines.push(spent ? `Gasta ${spent} d’energia per anul·lar ${spent} dau(s) negatiu(s). Total final: ${rollDataFromRolls(hit.rolls).total + hit.statValue}.` : 'No gasta energia per millorar la tirada.');
-          const wasFirstServe = turn.phase === 'serve' && turn.serveAttempt === 1;
           resolveHit();
           if (turn.phase === 'reposition' && turn.activeSide === 'right') {
             lines.push(`Cop vàlid. Reps una pilota de dificultat ${ballValue}.`);
             reposition(risky, lines);
-          } else if (wasFirstServe && turn.phase === 'serve' && turn.activeSide === 'right' && turn.serveAttempt === 2) {
-            lines.push('Falta de primer saque. Després de Continuar farà el segon saque.');
           } else {
             lines.push('Cop fallat: el punt és teu.');
           }

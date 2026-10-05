@@ -72,7 +72,7 @@ function shotDifficulty(cell) {
 }
 
 function requiredHitTotal(state, side) {
-  return state.statName === 'Saque' ? ballValue + reserve.fatigue[side] : ballValue - 1;
+  return state.statName === 'Saque' ? 2 : ballValue - 1;
 }
 
 function negativeServe(state) {
@@ -82,6 +82,7 @@ function negativeServe(state) {
 function reserveTargets({ anyDie = false } = {}) {
   if (turn.phase !== 'return' || turn.hitReady || (!turn.ballPlaced && !playerCanReachBall(turn.activeSide))) return [];
   const selected = chosenDie();
+  if (!anyDie && selected === null) return [];
   const dice = !anyDie && selected !== null ? [selected] : reserve.pools[turn.activeSide].filter(v => v !== null);
   const maximum = Math.max(...dice.map(value => dieMaximum(value)));
   const start = turn.activeSide === 'left' ? 3 : 0;
@@ -207,12 +208,16 @@ function renderReserve() {
     targets.append(button);
   }
   const help = document.getElementById('reserve-help');
+  const serveDie = chosenDie();
+  const servePreview = serveDie === null ? 'Tria un dau per calcular el servei.'
+    : `Saque ${reserveStat(turn.activeSide, 'Saque')} + dau ${serveDie} = ${reserveStat(turn.activeSide, 'Saque') + serveDie}.`;
   help.textContent = reserve.pendingLoss ? 'Punt acabat. Revisa la situació abans de començar el punt nou.'
     : turn.phase === 'reposition' ? 'Cop resolt. Tria el moviment gratuït o queda’t al lloc.'
     : turn.phase === 'finished' ? 'Partit acabat. Pots començar una nova partida.'
     : turn.hitReady ? 'Dau gastat. Revisa el resultat i prem Resoldre.'
-    : turn.phase === 'serve' ? 'Tria un dau: el −1 és sempre falta de servei i no es pot corregir amb energia. Cal igualar la dificultat més la fatiga.'
-    : chosenDie() === null ? 'Tria un dau de la teva reserva. Les caselles indiquen la dificultat (D); × vol dir impossible.'
+    : turn.phase === 'serve' ? `${servePreview} Un total d’1 o menys, o un dau −1, perd el punt. No es pot millorar amb energia.`
+    : chosenDie() === null ? 'Tria un dau de la teva reserva per veure els destins possibles.'
+      : reserveTargets().length && !reserveTargets().some(target => target.available) ? 'Aquest dau no permet cap destí, ni gastant energia. Tria un altre dau de la reserva; el punt encara es pot salvar.'
       : `Dau triat: ${chosenDie() > 0 ? '+' : ''}${chosenDie()}. Les caselles disponibles ja compten l’energia per anul·lar un −1.`;
 }
 

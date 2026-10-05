@@ -468,14 +468,16 @@ function renounceMovement() {
 }
 
 function updateTurnUI() {
+  updateHitButtons();
+  updateHitPanelForPlayer(lastHitSide || turn.activeSide);
   const label = getPlayerLabel(turn.activeSide);
   const forcedError = lastHitSide && hitStateByPlayer[lastHitSide]?.forcedError;
-  const serveLabel = turn.serveAttempt === 2 ? 'Segon saque' : 'Primer saque';
+  const serveLabel = 'Saque';
   const action = turn.phase === 'serve' ? 'ha de fer el saque' : 'ha de tornar la pilota';
   turnStatusEl.textContent = turn.phase === 'serve'
     ? `Actiu: ${label} · ${serveLabel}`
     : `Actiu: ${label}`;
-  serveDifficultyControlEl.hidden = turn.phase !== 'serve';
+  serveDifficultyControlEl.hidden = true;
   updateServeDifficultyControls();
 
   if (reserve.pendingLoss) {
@@ -492,7 +494,7 @@ function updateTurnUI() {
       : `${label} ${action}: decideix si vols apropar-lo a la pilota.`;
   } else if (!turn.ballPlaced) {
     turnHintEl.textContent = turn.phase === 'serve'
-      ? `${label}: posa la dificultat, tria un dau de la reserva i prem Jugar el dau. La pilota es mourà automàticament.`
+      ? `${label}: tria un dau i prem Jugar el dau. El valor del servei serà Saque + dau; −1 o total ≤ 1 perd el punt.`
       : turn.volley
         ? `${label}: volea preparada. Envia la pilota al camp contrari i colpeja amb Voleia.`
         : `${label} és a la pilota: envia-la al camp contrari.`;
@@ -735,18 +737,11 @@ function renderBallValue() {
 }
 
 function setServeDifficulty() {
-  if (turn.phase !== 'serve' || turn.ballPlaced) return;
-  const value = clamp(Number.parseInt(serveDifficultyInput.value, 10) || 1, 1, 99);
-  serveDifficultyInput.value = value.toString();
-  if (window.multiplayer?.dispatch('serveDifficulty', { value })) return;
-  ballValue = value;
-  renderBallValue();
-  updateServeDifficultyControls();
+  // Retained for older UI bindings; the chosen die now determines the serve.
 }
 
 function updateServeDifficultyControls() {
-  const locked = turn.phase !== 'serve' || turn.ballPlaced || Boolean(matchWinner()) ||
-    (window.multiplayer?.active && !window.multiplayer.canAct());
+  const locked = true;
   const value = Number(serveDifficultyInput.value);
   serveDifficultyInput.disabled = Boolean(locked);
   serveDecreaseBtn.disabled = Boolean(locked) || value <= 1;
@@ -1031,6 +1026,8 @@ function handleHit({ deferResolution = false } = {}) {
     const opponent = playerSide === 'left' ? playerRightEl : playerLeftEl;
     turn.currentShotRow = serverCell.row;
     turn.baseDifficulty = ballValue;
+    ballValue = total;
+    renderBallValue();
     setBallToCell(getGridCell(opponent, courtRect));
     turn.ballPlaced = true;
   }
@@ -1172,13 +1169,7 @@ function resolveHit() {
 
   if (turn.phase === 'serve' && (negativeServe(state) || total < requiredTotal)) {
     state.resolved = true;
-    if (turn.serveAttempt === 1) {
-      reserve.notice = negativeServe(state) ? 'Primera falta: el dau −1 és falta de servei. Prepara el segon servei.' : `Primera falta: resultat ${total}, mínim ${requiredTotal}. Prepara el segon servei.`;
-      startSecondServe();
-      return;
-    }
-
-    pauseLostPoint(negativeServe(state) ? 'Doble falta: el dau −1 és falta de servei i no es pot corregir amb energia.' : `Doble falta: resultat ${total}, mínim necessari ${requiredTotal}.`, lastHitSide);
+    pauseLostPoint(negativeServe(state) ? 'Servei perdut: el dau −1 perd el punt i no es pot corregir amb energia.' : `Servei perdut: resultat ${total}. Cal un total de 2 o més i no es pot millorar amb energia.`, lastHitSide);
     return;
   }
 
@@ -1197,13 +1188,11 @@ function resolveHit() {
 
   state.resolved = true;
   const previousDifficulty = ballValue;
-  if (turn.phase !== 'serve') {
-    ballValue = total;
-    renderBallValue();
-  }
+  ballValue = total;
+  renderBallValue();
   ballMemory.previousShotRow = turn.currentShotRow;
   const difficultyText = turn.phase === 'serve'
-    ? `Es manté la dificultat de saque: ${ballValue}.`
+    ? `Valor del servei: ${ballValue} (Saque + dau).`
     : `Nova dificultat: ${ballValue}.`;
   state.outcome = `Cop vàlid (${total} contra dificultat ${previousDifficulty}). ${difficultyText}`;
   updateHitPanelForPlayer(lastHitSide);

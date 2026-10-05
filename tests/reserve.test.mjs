@@ -140,19 +140,18 @@ test('lost point preserves the board and survives reload; only confirmation adva
   assert.throws(()=>runGame(next,{type:'nextPoint'}));
 });
 
-test('second serve retains dice; a new point refreshes both reserves', () => {
+test('a failed serve loses the point immediately; confirmation refreshes both reserves', () => {
   let state = runGame(null,null);
   state.reserve.pools.left = [-1,0,1,1];
   state.playerCards[0].energy = '0';
   const right = [...state.reserve.pools.right];
-  state = runGame(state,{type:'serveDifficulty',value:9});
+  assert.throws(()=>runGame(state,{type:'serveDifficulty',value:9}));
   state = runGame(state,{type:'selectDie',index:0});
   state = runGame(state,{type:'hit'});
-  assert.equal(state.turn.serveAttempt,2);
+  assert.equal(state.turn.phase,'point-ended');
   assert.deepEqual(state.reserve.pools.left,[null,0,1,1]);
   assert.deepEqual(state.reserve.pools.right,right);
-  state = runGame(state,{type:'selectDie',index:1});
-  state = runGame(state,{type:'hit'});
+  assert.throws(()=>runGame(state,{type:'selectDie',index:1}));
   assert.equal(state.turn.phase,'point-ended');
   state = runGame(state,{type:'nextPoint'});
   assert.equal(state.score.right.points,1);
@@ -268,7 +267,7 @@ test('shared reserve rooms use their own rules and reject cross-edition access',
     const hit=await call(path+'/actions',{revision:1,action:{type:'hit'}});
     assert.equal(hit.status,200);
     const snapshot=await hit.json();
-    if (room.state.reserve.pools.left[0] === -1) assert.equal(snapshot.state.turn.serveAttempt,2);
+    if (room.state.reserve.pools.left[0] === -1) assert.equal(snapshot.state.turn.phase,'point-ended');
     else assert.equal(snapshot.state.hitStateByPlayer.left.rolls.length,1);
     assert.equal(snapshot.state.reserve.pools.left[0],null);
     assert.equal((await call(path+'/actions',{revision:1,action:{type:'hit'}})).status,409);
@@ -277,26 +276,89 @@ test('shared reserve rooms use their own rules and reject cross-edition access',
   } finally {db.close();}
 });
 
-test('negative serves resolve automatically without energy, double fault waits for confirmation', () => {
-  let state=runGame(null,null);
-  state.reserve.pools.left=[-1,-1,0,1];
-  state.playerCards[0].stats[0]='4';
-  for (const index of [0,1]) {
-    state=runGame(state,{type:'selectDie',index});
+test('serve value is skill plus die; total <= 1 or a minus loses without energy or a second serve', () => {
+  for(const skill of [1,2,4]) for(const die of [-1,0,1]) {
+    let state=runGame(null,null);
+    state.reserve.pools.left=[die,0,1,1];
+    state.playerCards[0].stats[0]=String(skill);
+    state.ballValue=99; // Old chosen difficulty must no longer affect the serve.
+    state=runGame(state,{type:'selectDie',index:0});
     state=runGame(state,{type:'hit'});
     assert.equal(state.playerCards[0].energy,'5');
+    assert.equal(state.ballValue,skill+die);
     assert.throws(()=>runGame(state,{type:'removeMinus'}));
-    if(index===0) {
-      assert.equal(state.turn.serveAttempt,2);
-      assert.deepEqual(state.reserve.pools.left,[null,-1,0,1]);
+    const failed=die===-1 || skill+die<=1;
+    assert.equal(state.turn.phase,failed?'point-ended':'reposition');
+    if(failed) {
+      assert.match(state.reserve.notice,/Servei perdut/);
+      state=runGame(state,{type:'nextPoint'});
+      assert.equal(state.score.right.points,1);
     }
   }
-  assert.equal(state.turn.phase,'point-ended');
-  assert.equal(state.score.right.points,0);
-  assert.match(state.reserve.notice,/Doble falta/);
-  state=runGame(state,{type:'nextPoint'});
-  assert.equal(state.score.right.points,1);
-  assert.deepEqual(state.reserve.fatigue,{left:0,right:0});
+});
+
+test('targets stay hidden until a die is selected; a weak choice can be changed without a dead end', () => {
+  const {context:c,document:d}=client(returning({difficulty:4,energy:1}));
+  assert.equal(c.reserveTargets().length,0);
+  assert.equal(d.getElementById('reserve-targets').children.length,0);
+  assert.equal(c.reserveTargets({anyDie:true}).some(t=>t.available),true);
+  c.selectReserveDie(0);
+  assert.equal(c.reserveTargets().some(t=>t.available),false);
+  assert.match(d.getElementById('reserve-help').textContent,/Tria un altre dau/);
+  c.selectReserveDie(2);
+  assert.equal(c.canPlaceReserveBall({col:5,row:0}),true);
+  c.placeShotBall({col:5,row:0});
+  assert.equal(d.getElementById('hit-action').disabled,false);
+  c.handleHit();
+  assert.equal(c.getGameState().turn.phase,'reposition');
+});
+
+test('controls recover after energy changes while a negative shot is pending', () => {
+  const {context:c,document:d}=client(returning({difficulty:3,energy:1}));
+  c.selectReserveDie(0); c.placeShotBall({col:5,row:0}); c.handleHit();
+  const energy=d.querySelector('.player-card[data-player="left"]').querySelector('.energy-input');
+  energy.value='0'; c.updateTurnUI();
+  assert.equal(d.getElementById('hit-action').disabled,false,'can finish a shot that can no longer be rescued');
+  energy.value='1'; c.updateTurnUI();
+  assert.equal(d.getElementById('reserve-hit-panel').hidden,false);
+  assert.equal(d.getElementById('hit-panel-remove').disabled,false,'energy action must be enabled again');
+});
+
+test('long sequences always offer a playable action, energy rescue, movement or point confirmation', () => {
+  for(const orientation of ['horizontal','vertical']) {
+    const {context:c,document:d}=client();
+    c.setCourtOrientation(orientation);
+    let points=0;
+    for(let step=0;step<240;step++) {
+      const state=plain(c.getGameState()), side=state.turn.activeSide;
+      if(state.turn.phase==='finished') break;
+      if(state.reserve.pendingLoss) { c.continueReservePoint(); points++; }
+      else if(state.turn.phase==='reposition') c.finishPostHitMovement(0,0);
+      else if(state.turn.hitReady) {
+        const card=d.querySelector(`.player-card[data-player="${side}"]`);
+        assert.equal(c.canRescueHit(state.hitStateByPlayer[side],side),true);
+        c.handleRemoveMinus({currentTarget:{closest:()=>card}});
+      } else if(state.turn.phase==='serve') {
+        c.selectReserveDie(state.reserve.pools[side].findIndex(v=>v!==null)); c.handleHit();
+      } else if(!c.playerCanReachBall(side)) {
+        if(c.movementCost()<=c.energyForPlayer(side)) c.acceptMovement();
+        else if(c.canAttemptVolley()) c.attemptVolley();
+        else c.settleReserveTurn();
+      } else {
+        let target;
+        for(let index=0;index<4;index++) {
+          if(state.reserve.pools[side][index]===null) continue;
+          c.selectReserveDie(index);
+          target=c.reserveTargets().find(t=>t.available);
+          if(target) break;
+        }
+        if(target) { c.placeShotBall(target.cell); c.handleHit(); }
+        else c.settleReserveTurn();
+      }
+      assert.notDeepEqual(plain(c.getGameState()),state,`stalled at ${orientation} step ${step}`);
+    }
+    assert.ok(points>=5,'several points complete without getting stuck');
+  }
 });
 
 test('all returns allow one below difficulty; two below pauses the lost point', () => {

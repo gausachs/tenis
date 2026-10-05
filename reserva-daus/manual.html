@@ -73,8 +73,9 @@ consulta</a></li>
 <p>Aquesta és una versió independent de Tenis Fate. Es pot jugar amb
 tauler, daus i paper, sense ordinador. Utilitza reserves de daus
 consumibles, fatiga progressiva i destins limitats als cops possibles.
-Les devolucions són vàlides amb un punt menys que la dificultat. Al
-servei cal igualar-la, i un −1 sempre és falta.</p>
+Les devolucions són vàlides amb un punt menys que la dificultat. El
+servei val Saque + dau: un −1 o un total d’1 o menys perd el punt, sense
+segon intent ni millora amb energia.</p>
 <h2 id="material-i-objectiu">1. Material i objectiu</h2>
 <ul>
 <li>Pista de sis columnes i dues files, amb la xarxa entre les columnes
@@ -170,38 +171,32 @@ successivament. Suma la fatiga actual <strong>una sola vegada a la
 dificultat de cada cop</strong>, després del moviment i dels
 modificadors de destí. No la sumis de nou cada vegada que canviïs de
 casella o de dau abans de colpejar.</p>
-<p>La fatiga afecta tots els tipus de cop, inclòs un servei si s’arriba
-a renovar la reserva abans de fer-lo. No es gasta ni es redueix amb
+<p>La fatiga afecta les devolucions. El servei inicia el punt amb fatiga
+0 i es calcula com Saque + dau. La fatiga no es gasta ni es redueix amb
 energia. <strong>Tota la fatiga desapareix quan acaba el punt</strong>,
-també per doble falta, renúncia o manca de destins. El segon servei
-continua dins del mateix punt i no l’elimina.</p>
-<p><strong>Un segon saque pertany al mateix punt:</strong> el dau del
-primer intent ja està gastat; escull un altre dels que et queden. No
-recuperes ni els daus ni l’energia gastats en la primera falta.</p>
+també per servei erroni, renúncia o manca de destins.</p>
 <p>Exemple: tens −1, 0, +1 i +1. Amb General 2 pots aconseguir
 respectivament 1, 2, 3 o 3. Si gastes un +1, en queden −1, 0 i +1 per a
 cops posteriors.</p>
 <h2 id="el-servei">4. El servei</h2>
-<p>El servidor disposa de dos intents per punt i serveix durant tot el
-joc ordinari.</p>
+<p>El servidor fa <strong>un únic intent per punt</strong> i serveix
+durant tot el joc ordinari. No es tria cap dificultat de servei.</p>
 <ol type="1">
-<li>Tria la dificultat del saque (enter entre 1 i 99 en
-l’aplicació).</li>
-<li>Escull un dau de la reserva i suma Saque.</li>
-<li>Si el dau és <strong>−1, és falta sempre</strong>, encara que
-l’habilitat sigui alta i el total arribés a la dificultat. <strong>No
-pots gastar energia per convertir-lo en 0 al servei.</strong></li>
-<li>Amb un dau 0 o +1, el servei és vàlid si el total iguala o supera la
-dificultat triada més la fatiga actual.</li>
+<li>Escull un dau de la reserva i consumeix-lo.</li>
+<li>Calcula <strong>valor del servei = habilitat Saque + valor del
+dau</strong>.</li>
+<li>Si el dau és <strong>−1</strong>, perds el punt, encara que el total
+sigui alt.</li>
+<li>Si el total és <strong>1 o menys</strong>, també perds el punt.</li>
+<li>Amb un dau 0 o +1 i un total de 2 o més, el servei és vàlid. El
+receptor rep una pilota amb aquest total.</li>
 </ol>
-<p>El destí del servei és sempre la casella del rival. El valor que rep
-el rival és la <strong>dificultat triada</strong>, encara que el total
-sigui superior. Amb Saque 2 i un dau +1, el màxim resultat és 3.</p>
-<p>Si falla el primer intent, recol·loca els tenistes a A1 i B6 i torna
-la pilota al servidor. Pots canviar la dificultat per al segon intent.
-Si també falla, el receptor guanya el punt. La prohibició de caselles
-impossibles afecta les devolucions: al servei pots escollir una
-dificultat que no assoleixis i cometre falta.</p>
+<p><strong>No es pot gastar energia per millorar el servei. No hi ha
+segon servei.</strong> Un servei fallat es mostra i s’explica abans de
+continuar al punt nou.</p>
+<p>El destí del servei és sempre la casella del rival. Exemples: Saque 2
+amb +1 envia una pilota de valor 3; Saque 2 amb 0 envia valor 2; Saque 1
+amb 0 perd el punt; Saque 4 amb −1 també perd el punt.</p>
 <p>Després d’un servei vàlid, anota la fila des d’on has servit i fes el
 moviment posterior al cop. La primera devolució del receptor utilitza
 Restada, tret que prepari una volea.</p>
@@ -279,8 +274,8 @@ pilota, que pot baixar un punt respecte de la dificultat final.</p>
 mínim, o si hi arriba convertint un −1 en 0 amb 1 d’energia disponible
 <strong>després del moviment</strong>.</p>
 <ul>
-<li>Abans de triar dau, mira les caselles que pots assolir amb almenys
-un dels daus que et queden.</li>
+<li>Primer tria un dau. L’aplicació no mostra els destins fins que n’has
+escollit un; després indica els que pots assolir amb aquell dau.</li>
 <li>Després de triar-lo, només pots enviar la pilota a les caselles
 assolibles amb aquell dau.</li>
 <li>Pots canviar el dau o el destí abans de fer el cop. Recalcula sempre
@@ -375,19 +370,20 @@ cadascú, inclòs el zero.</p>
 l’ordinador. També pots crear una partida compartida d’aquesta edició.
 Els enllaços i els guardats són independents dels del Clàssic.</p>
 <p>Prem un dels quatre daus de la teva reserva. Els gastats mostren
-«Gastat», amb un comptador de daus disponibles i la fatiga. Després de
-moure’t o preparar la volea, toca una casella disponible o arrossega-hi
-la pilota. <strong>D</strong> indica la dificultat final, amb la fatiga
-inclosa; les caselles ratllades amb <strong>×</strong> no es poden
-seleccionar. Prem «Jugar el dau»: el cop es resol automàticament. El
-panell «Colpeig» només apareix si has escollit un −1 i convertir-lo en 0
-amb energia permet salvar la devolució. Prem «Convertir −1 en 0»; es
-gasta 1 d’energia i es resol el cop. Al servei no es pot fer aquesta
+«Gastat», amb un comptador de daus disponibles i la fatiga. Els destins
+només apareixen després de triar un dau. Després de moure’t o preparar
+la volea, toca una casella disponible o arrossega-hi la pilota.
+<strong>D</strong> indica la dificultat final, amb la fatiga inclosa;
+les caselles ratllades amb <strong>×</strong> no es poden seleccionar.
+Prem «Jugar el dau»: el cop es resol automàticament. El panell «Colpeig»
+només apareix si has escollit un −1 i convertir-lo en 0 amb energia
+permet salvar la devolució. Prem «Convertir −1 en 0»; es gasta 1
+d’energia i es resol el cop. Al servei no es pot fer aquesta
 millora.</p>
 <p>Si un tenista no pot tornar la pilota, la pantalla conserva les
 posicions, els daus i la dificultat, i explica el motiu i qui guanya el
 punt. Prem «Continuar al punt següent» per anotar-lo i preparar el punt
-nou. La pausa també s’aplica a la doble falta. Si el punt tanca el
+nou. La pausa també s’aplica al servei erroni. Si el punt tanca el
 partit, es mostra el final del partit.</p>
 <p>Les fletxes del moviment final sempre segueixen l’orientació visible
 del tauler. Pots canviar entre horitzontal i vertical sense canviar les
@@ -410,8 +406,9 @@ augmenta la teva fatiga en +1.</li>
 restants.</li>
 <li>Cap destí amb cap dau: punt per al rival.</li>
 <li>Tria dau i destí; consumeix el dau en fer el cop.</li>
-<li>Al servei, −1 és falta sense millora. En una devolució, si permet
-arribar a dificultat − 1, paga 1 energia per convertir −1 en 0.</li>
+<li>Al servei, el valor és Saque + dau; −1 o total ≤ 1 perd el punt,
+sense segon intent ni millora. En una devolució, si permet arribar a
+dificultat − 1, paga 1 energia per convertir −1 en 0.</li>
 <li>Resol, actualitza dificultat i fila d’origen; fes el moviment
 gratuït.</li>
 <li>Passa el torn. Conserva els daus no gastats fins al final del

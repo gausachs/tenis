@@ -68,5 +68,6 @@ const reserveSuffix = suffix
         action.index >= 0 && action.index < 4 && reserve.pools[turn.activeSide][action.index] !== null);
       selectReserveDie(action.index); break;
     case 'serveDifficulty':`)
+  .replace('serveDifficultyInput.value = String(action.value); setServeDifficulty(); break;', "throw new Error('El servei es calcula amb Saque + dau.');")
   .replace('placeShotBall(cell); break;', 'requireRule(canPlaceReserveBall(cell)); placeShotBall(cell); break;');
 await writeFile(new URL('../.generated/reserve-engine.mjs', import.meta.url), prefix + reserveRules + '\n' + reserveSource + reserveSuffix);
