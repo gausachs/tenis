@@ -201,19 +201,19 @@ Exemple: amb dificultat 4, resultat inicial 2, un dau «−» i almenys 1 d’en
 
 ### Millorar la tirada amb energia
 
-Només si el cop falla però es pot salvar, pots gastar **1 d’energia per convertir un dau «−» en blanc**. Cada conversió augmenta el total en 1. Si encara no arribes al mínim, no donis el cop per resolt: completa les millores necessàries o tria un destí viable.
+Només si el cop falla però es pot salvar, pots gastar **1 d’energia per convertir un dau «−» en blanc**. Cada conversió augmenta el total en 1. Si encara no arribes al mínim, no donis el cop per resolt: completa les millores necessàries. No pots canviar el destí després de tirar.
 
 Pots convertir diversos daus si tens prou energia, però no pots convertir blancs en «+», modificar daus positius ni tornar a tirar. Quan arribes al mínim necessari, ja no pots gastar més energia per millorar-lo. Amb «−−−−» no pots gastar energia: és falta automàtica.
 
 **Excepció del servei:** pots millorar una tirada de servei fallida si no és «−−−−» i tens prou energia i daus «−» per assolir la dificultat. Tan bon punt arribes a la dificultat escollida, deixes de poder gastar energia en aquell servei.
 
-### Ajustar el destí després de veure els daus
+### El destí queda fixat abans de tirar
 
-En una devolució que no sigui un error irrecuperable, encara pots canviar la casella de destí abans de resoldre. No tires de nou.
+Tria la casella de destí i calcula la dificultat **abans de tirar els daus**. Un cop feta la tirada, no pots moure la pilota ni canviar-ne el destí, encara que no hagis premut Resoldre o puguis gastar energia.
 
-Recalcula els modificadors des de la mateixa base de dificultat: **substitueix els modificadors del destí anterior, no els acumulis**. Conserva la fila des d’on has iniciat el cop.
+Abans de tirar, pots rectificar el destí. Recalcula els modificadors des de la mateixa base de dificultat: **substitueix els modificadors del destí anterior, no els acumulis**. Conserva la fila des d’on has iniciat el cop.
 
-Si el nou destí deixa el total 2 punts o més per sota, pots tornar a triar un destí viable. Si decideixes conservar-lo i pots assolir el mínim convertint daus «−», has de pagar l’energia necessària abans de donar el cop per resolt. Si no hi pots arribar, el cop falla.
+Després de tirar, només pots aplicar les millores d’energia permeses i resoldre el cop contra la dificultat del destí fixat. Si no pots assolir el mínim, el cop falla.
 
 ### Resolució definitiva
 
@@ -341,7 +341,7 @@ L’intercanvi continua fins que algú falla o renuncia.
 3. Calcula la dificultat amb tots els modificadors.
 4. Tira quatre daus: «++++» guanya el punt i «−−−−» el perd. En els altres casos, suma Restada, General o Voleia.
 5. Si el resultat és dificultat − 2 o menys, comprova si els daus negatius i l’energia permeten arribar a dificultat − 1. Només perds el punt immediatament si no el pots salvar.
-6. Només per salvar un cop que encara falla, pots convertir «−» en blancs pagant 1 d’energia per dau i ajustar el destí.
+6. Només per salvar un cop que encara falla, pots convertir «−» en blancs pagant 1 d’energia per dau. El destí ja no es pot canviar.
 7. Resol: amb almenys dificultat − 1, el total final és el nou valor de la pilota.
 8. Actualitza el marcador de fila, retira els daus i mou-te una casella gratis o queda’t al lloc.
 

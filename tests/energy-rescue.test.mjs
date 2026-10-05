@@ -23,6 +23,25 @@ function hit({ rolls = [-1, 0, 0, 1], energy = 5, difficulty = 4 } = {}) {
 }
 const action = (state, type) => runGame(structuredClone(state), { type });
 
+test('Classic fixes the destination after rolling, including rescuable shots and both orientations', () => {
+  for (const orientation of ['horizontal', 'vertical']) {
+    const { context, document, state } = hit({ energy: 1 });
+    context.setCourtOrientation(orientation);
+    const before = JSON.stringify(context.getGameState());
+    const destination = { col: 5, row: 1 };
+    assert.throws(() => runGame(structuredClone(state), { type: 'placeBall', cell: destination }));
+    context.placeShotBall(destination);
+    assert.equal(JSON.stringify(context.getGameState()), before);
+    context.startDrag({ currentTarget: document.getElementById('ball'), pointerId: 1, clientX: 100, clientY: 100 });
+    context.moveDrag({ clientX: 500, clientY: 300 });
+    context.endDrag({ pointerId: 1 });
+    assert.equal(JSON.stringify(context.getGameState()), before);
+    // The destination lock must not prevent spending energy to save the shot.
+    const rescued = action(state, 'removeMinus');
+    assert.equal(action(rescued, 'resolve').turn.phase, 'reposition');
+  }
+});
+
 test('Classic special rolls override all difficulties locally and on the server, without energy', () => {
   for (const statName of ['Saque', 'Restada', 'General', 'Voleia']) {
     for (const value of [-1, 1]) for (const attempt of [1, 2]) {

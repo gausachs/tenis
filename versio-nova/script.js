@@ -501,7 +501,7 @@ function updateTurnUI() {
   } else if (turn.phase === 'serve') {
     turnHintEl.textContent = `${label}: la pilota és a la posició del rival. Pots millorar el cop o resoldre.`;
   } else {
-    turnHintEl.textContent = `${label}: pots ajustar la posició de la pilota o resoldre el colpeig.`;
+    turnHintEl.textContent = `${label}: el destí està fixat. Pots salvar el cop amb energia si és possible, o resoldre.`;
   }
 
   playerLeftEl.classList.toggle('active-player', turn.activeSide === 'left');
@@ -577,6 +577,7 @@ function startDrag(event) {
       forcedError ||
       turn.phase === 'reposition' ||
       turn.phase === 'serve' ||
+      turn.hitReady ||
       (!turn.ballPlaced && !playerCanReachBall(turn.activeSide))
     ))
   ) {
@@ -680,6 +681,7 @@ function endDrag(event) {
 }
 
 function placeShotBall(endCell, startCell = getGridCell(ballEl)) {
+      if (turn.hitReady || turn.phase !== 'return') return;
       const courtRect = court.getBoundingClientRect();
       const targetSide = endCell.col < 3 ? 'left' : 'right';
       const opponentCell = getGridCell(

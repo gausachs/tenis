@@ -36,7 +36,7 @@ if (action) {
       requireRule(canAttemptVolley()); attemptVolley(); break;
     case 'placeBall': {
       const cell = action.cell;
-      requireRule(turn.phase === 'return' && !pendingHit?.forcedError &&
+      requireRule(turn.phase === 'return' && !turn.hitReady && !pendingHit?.forcedError &&
         (turn.ballPlaced || playerCanReachBall(turn.activeSide)) && cell &&
         Number.isInteger(cell.col) && Number.isInteger(cell.row) && cell.col >= 0 && cell.col <= 5 && cell.row >= 0 && cell.row <= 1 &&
         (cell.col < 3 ? 'left' : 'right') !== turn.activeSide);
