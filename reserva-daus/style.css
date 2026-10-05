@@ -14,6 +14,7 @@
 .reserve-dice button[aria-pressed="true"] { outline: 3px solid #edb718; outline-offset: 2px; }
 .reserve-panel .reserve-dice button.spent { font-size: 13px; background: #e5e7eb; color: #52525b; border-style: dashed; opacity: 1; }
 .reserve-count { font-size: .85rem; margin: .5rem 0 0; }
+#reserve-hit-panel[hidden], #reserve-point-end[hidden] { display: none; }
 #reserve-help, #reserve-notice { font-size: .85rem; line-height: 1.4; }
 #reserve-notice:empty { display: none; }
 #reserve-notice { background: #fff1cc; padding: .5rem; border-radius: 6px; }

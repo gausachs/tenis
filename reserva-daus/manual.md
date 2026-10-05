@@ -2,7 +2,7 @@
 
 Manual del joc de taula · Edició d’octubre de 2026
 
-Aquesta és una versió independent de Tenis Fate. Es pot jugar amb tauler, daus i paper, sense ordinador. Utilitza reserves de daus consumibles, fatiga progressiva i destins limitats als cops possibles. Cal igualar la dificultat de qualsevol cop, i un −1 al servei sempre és falta.
+Aquesta és una versió independent de Tenis Fate. Es pot jugar amb tauler, daus i paper, sense ordinador. Utilitza reserves de daus consumibles, fatiga progressiva i destins limitats als cops possibles. Les devolucions són vàlides amb un punt menys que la dificultat. Al servei cal igualar-la, i un −1 sempre és falta.
 
 ## 1. Material i objectiu
 
@@ -93,7 +93,7 @@ Les condicions compatibles se sumen. Afegeix també la fatiga actual del tenista
 
 **Dificultat final = valor de la pilota després del moviment o la volea + modificadors de destí + fatiga pròpia.**
 
-Per tornar la pilota has d’obtenir **com a mínim la dificultat final**. Quedar-se un punt per sota ja és error. No s’afegeix un límit general de dificultat 4 ni es modifiquen les habilitats. En una devolució vàlida, el valor de la pilota no pot baixar: pot quedar igual si iguales exactament, o pujar si el resultat és superior.
+Per tornar la pilota has d’obtenir **com a mínim la dificultat final − 1**. Un punt per sota és vàlid; dos punts per sota és error si no es pot salvar amb energia. No hi ha un límit general de dificultat 4. El total final del cop es converteix en el nou valor de la pilota, que pot baixar un punt respecte de la dificultat final.
 
 Una casella és possible amb un dau si el seu resultat arriba al mínim, o si hi arriba convertint un −1 en 0 amb 1 d’energia disponible **després del moviment**.
 
@@ -109,19 +109,19 @@ La comprovació es fa quan ja ets a la pilota o has escollit com arribar-hi. Els
 
 Tens General 2, reserva −1, 0, +1 i +1, energia 1 i fatiga 0. Una vegada sumats moviment i posició, tres destins exigeixen dificultats 1, 2 i 3:
 
-| Dau escollit | Total | D1 (mínim 1) | D2 (mínim 2) | D3 (mínim 3) |
+| Dau escollit | Total | D1 (mínim 0) | D2 (mínim 1) | D3 (mínim 2) |
 |---|---:|---|---|---|
-| −1 | 1 | Sí | Sí, gastant 1 energia | No |
-| 0 | 2 | Sí | Sí | No |
+| −1 | 1 | Sí | Sí | Sí, gastant 1 energia |
+| 0 | 2 | Sí | Sí | Sí |
 | +1 | 3 | Sí | Sí | Sí |
 
-Una casella de dificultat 4 seria impossible amb aquesta habilitat i aquesta reserva: exigiria un total mínim de 4. Amb fatiga +1, les tres caselles de l’exemple passarien a D2, D3 i D4: la tercera deixaria d’estar disponible.
+Una casella de dificultat 4 exigeix un total mínim de 3: és possible amb el dau +1. Amb fatiga +1, els destins de l’exemple passen a D2, D3 i D4; l’últim requereix el +1.
 
 ## 7. Fer i resoldre el cop
 
 Escull el dau i el destí vàlid, suma l’habilitat i marca el dau com a gastat. No hi ha una tirada nova en aquest moment. Un cop jugat el dau, ja no pots canviar el destí ni substituir el dau.
 
-En una devolució, si cal convertir el −1 en 0 per igualar la dificultat i salvar el cop, paga 1 d’energia i resol. Només es permet gastar aquesta energia quan salva un cop que, sense la millora, fallaria. No pots gastar-la per reforçar un cop que ja és vàlid, ni per salvar-ne un que continuaria sent impossible. **Aquesta millora està prohibida al servei: el −1 sempre és falta.**
+En una devolució, si cal convertir el −1 en 0 per arribar a dificultat − 1 i salvar el cop, paga 1 d’energia i resol. Només es permet gastar aquesta energia quan salva un cop que, sense la millora, fallaria. No pots gastar-la per reforçar un cop que ja és vàlid, ni per salvar-ne un que continuaria sent impossible. **Aquesta millora està prohibida al servei: el −1 sempre és falta.**
 
 En una devolució vàlida, **el total final es converteix en el nou valor de la pilota**. Actualitza el marcador de fila amb la fila d’origen del teu cop, no amb la del destí.
 
@@ -141,7 +141,9 @@ Exemple: amb energia 1 i màxim 5, falten 4; recuperes 2 i quedes a 3. Amb energ
 
 Obre «Reserva de daus» i inicia una partida de dos jugadors o contra l’ordinador. També pots crear una partida compartida d’aquesta edició. Els enllaços i els guardats són independents dels del Clàssic.
 
-Prem un dels quatre daus de la teva reserva. Els gastats mostren «—» i al costat de cada reserva s’indica la fatiga. Després de moure’t o preparar la volea, toca una casella disponible o arrossega-hi la pilota. **D** indica la dificultat final, amb la fatiga inclosa; les caselles ratllades amb **×** no es poden seleccionar. Prem «Jugar el dau» i després «Resoldre». Si cal salvar una devolució, apareix el botó d’energia. Al servei no apareix.
+Prem un dels quatre daus de la teva reserva. Els gastats mostren «Gastat», amb un comptador de daus disponibles i la fatiga. Després de moure’t o preparar la volea, toca una casella disponible o arrossega-hi la pilota. **D** indica la dificultat final, amb la fatiga inclosa; les caselles ratllades amb **×** no es poden seleccionar. Prem «Jugar el dau»: el cop es resol automàticament. El panell «Colpeig» només apareix si has escollit un −1 i convertir-lo en 0 amb energia permet salvar la devolució. Prem «Convertir −1 en 0»; es gasta 1 d’energia i es resol el cop. Al servei no es pot fer aquesta millora.
+
+Si un tenista no pot tornar la pilota, la pantalla conserva les posicions, els daus i la dificultat, i explica el motiu i qui guanya el punt. Prem «Continuar al punt següent» per anotar-lo i preparar el punt nou. La pausa també s’aplica a la doble falta. Si el punt tanca el partit, es mostra el final del partit.
 
 Les fletxes del moviment final sempre segueixen l’orientació visible del tauler. Pots canviar entre horitzontal i vertical sense canviar les caselles lògiques ni els daus.
 
@@ -157,7 +159,7 @@ Pots imprimir aquest manual des del navegador o descarregar-ne la versió PDF. P
 4. Calcula els destins possibles amb els daus i l’energia restants.
 5. Cap destí amb cap dau: punt per al rival.
 6. Tria dau i destí; consumeix el dau en fer el cop.
-7. Al servei, −1 és falta sense millora. En una devolució, si permet igualar la dificultat, paga 1 energia per convertir −1 en 0.
+7. Al servei, −1 és falta sense millora. En una devolució, si permet arribar a dificultat − 1, paga 1 energia per convertir −1 en 0.
 8. Resol, actualitza dificultat i fila d’origen; fes el moviment gratuït.
 9. Passa el torn. Conserva els daus no gastats fins al final del punt.
 
@@ -168,7 +170,7 @@ Pots imprimir aquest manual des del navegador o descarregar-ne la versió PDF. P
 | Blau | ___ | ___ | ___ | ___ | ___ / 5 |
 | Vermell | ___ | ___ | ___ | ___ | ___ / 5 |
 
-Dificultat base: ___ · Modificadors: ___ · Fatiga pròpia: ___ · Dificultat final a igualar: ___
+Dificultat base: ___ · Modificadors: ___ · Fatiga pròpia: ___ · Dificultat final: ___ · Mínim de devolució (dificultat − 1): ___
 
 Habilitat: ___ · Dau: ___ · Millora amb energia: ___ · Total: ___
 

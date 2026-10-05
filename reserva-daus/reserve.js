@@ -1,7 +1,7 @@
 // Independent rules and saved state for the consumable-dice edition.
 const reserve = {
   pools: { left: [], right: [] }, selected: { left: null, right: null },
-  batches: { left: 0, right: 0 }, fatigue: { left: 0, right: 0 }, notice: '', lossId: 0
+  batches: { left: 0, right: 0 }, fatigue: { left: 0, right: 0 }, notice: '', lossId: 0, pendingLoss: null
 };
 
 function refillReserve(side, renewed = false) {
@@ -12,6 +12,7 @@ function refillReserve(side, renewed = false) {
 }
 
 function resetReserves() {
+  reserve.pendingLoss = null;
   reserve.fatigue = { left: 0, right: 0 };
   for (const side of ['left', 'right']) refillReserve(side);
 }
@@ -35,6 +36,7 @@ function restoreReserve(state) {
   }
   reserve.notice = state.reserve.notice || '';
   reserve.lossId = Number(state.reserve.lossId) || 0;
+  reserve.pendingLoss = state.reserve.pendingLoss || null;
   return true;
 }
 
@@ -70,7 +72,7 @@ function shotDifficulty(cell) {
 }
 
 function requiredHitTotal(state, side) {
-  return ballValue + (state.statName === 'Saque' ? reserve.fatigue[side] : 0);
+  return state.statName === 'Saque' ? ballValue + reserve.fatigue[side] : ballValue - 1;
 }
 
 function negativeServe(state) {
@@ -86,7 +88,7 @@ function reserveTargets({ anyDie = false } = {}) {
   const result = [];
   for (let col = start; col < start + 3; col++) for (let row = 0; row < 2; row++) {
     const cell = { col, row }, difficulty = shotDifficulty(cell);
-    result.push({ cell, difficulty, available: maximum >= difficulty });
+    result.push({ cell, difficulty, available: maximum >= difficulty - 1 });
   }
   return result;
 }
@@ -112,20 +114,49 @@ function selectReserveDie(index) {
   updateHitButtons(); updateTurnUI(); saveGame();
 }
 
+function pauseLostPoint(reason, loser = turn.activeSide) {
+  if (reserve.pendingLoss) return;
+  reserve.pendingLoss = { winner: oppositeSide(loser), reason };
+  reserve.notice = `${getPlayerLabel(loser)} no pot continuar. ${reason} Punt per a ${getPlayerLabel(oppositeSide(loser))}.`;
+  reserve.lossId++;
+  turn.phase = 'point-ended';
+  updateHitButtons(); updateTurnUI(); saveGame();
+}
+
+function continueReservePoint() {
+  if (window.multiplayer?.dispatch('nextPoint')) return;
+  if (!reserve.pendingLoss) return;
+  const winner = reserve.pendingLoss.winner;
+  reserve.pendingLoss = null;
+  reserve.notice = '';
+  awardPoint(winner);
+  updateScoreUI();
+  resetCourtAfterPoint();
+  saveGame();
+}
+
 function settleReserveTurn() {
   if (turn.phase !== 'return' || turn.hitReady) return;
+  if (!turn.ballPlaced && !playerCanReachBall(turn.activeSide)) {
+    if (movementCost() > energyForPlayer(turn.activeSide) && !canAttemptVolley()) {
+      pauseLostPoint(`La pilota és a ${distanceToBall(turn.activeSide)} caselles. Calen ${movementCost()} d’energia per arribar-hi i en té ${energyForPlayer(turn.activeSide)}; no pot fer una volea.`);
+    }
+    return;
+  }
   const targets = reserveTargets({ anyDie: true });
   if (targets.length && !targets.some(target => target.available)) {
-    reserve.notice = `${getPlayerLabel(turn.activeSide)} no pot enviar la pilota a cap casella amb els daus i l’energia disponibles. Punt per a ${getPlayerLabel(oppositeSide(turn.activeSide))}.`;
-    reserve.lossId++;
-    awardPoint(oppositeSide(turn.activeSide));
-    updateScoreUI();
-    resetCourtAfterPoint();
-    saveGame();
+    const maximum = Math.max(...reserve.pools[turn.activeSide].filter(v => v !== null).map(v => dieMaximum(v)));
+    const minimum = Math.min(...targets.map(target => target.difficulty - 1));
+    pauseLostPoint(`No pot enviar la pilota a cap casella. Millor resultat possible: ${maximum}, inclosa l’energia disponible (${energyForPlayer(turn.activeSide)}). Cal almenys ${minimum} al destí més fàcil (dificultat − 1, fatiga +${reserve.fatigue[turn.activeSide]} inclosa).`);
   }
 }
 
 function renderReserve() {
+  const pendingHit = lastHitSide && hitStateByPlayer[lastHitSide];
+  document.getElementById('reserve-hit-panel').hidden = !canRescueHit(pendingHit, lastHitSide) || Boolean(reserve.pendingLoss);
+  document.getElementById('reserve-point-end').hidden = !reserve.pendingLoss;
+  document.getElementById('reserve-point-reason').textContent = reserve.pendingLoss ? reserve.notice : '';
+  document.getElementById('reserve-next-point').disabled = Boolean(window.multiplayer?.active && !window.multiplayer.canAct());
   const computerTurn = window.computer?.ownsTurn();
   const onlineLocked = window.multiplayer?.active && !window.multiplayer.canAct();
   for (const side of ['left', 'right']) {
@@ -176,7 +207,8 @@ function renderReserve() {
     targets.append(button);
   }
   const help = document.getElementById('reserve-help');
-  help.textContent = turn.phase === 'reposition' ? 'Cop resolt. Tria el moviment gratuït o queda’t al lloc.'
+  help.textContent = reserve.pendingLoss ? 'Punt acabat. Revisa la situació abans de començar el punt nou.'
+    : turn.phase === 'reposition' ? 'Cop resolt. Tria el moviment gratuït o queda’t al lloc.'
     : turn.phase === 'finished' ? 'Partit acabat. Pots començar una nova partida.'
     : turn.hitReady ? 'Dau gastat. Revisa el resultat i prem Resoldre.'
     : turn.phase === 'serve' ? 'Tria un dau: el −1 és sempre falta de servei i no es pot corregir amb energia. Cal igualar la dificultat més la fatiga.'

@@ -7,7 +7,7 @@
   let timer = null;
   let running = false;
   const enabled = () => score.mode === 'computer' && !window.multiplayer?.active;
-  const ownsTurn = () => enabled() && !matchWinner() && turn.activeSide === 'right';
+  const ownsTurn = () => enabled() && !matchWinner() && !reserve.pendingLoss && turn.activeSide === 'right';
   const pick = items => items[Math.floor(Math.random() * items.length)];
   const distance = (a, b) => Math.abs(a.col - b.col) + Math.abs(a.row - b.row);
   const cellLabel = cell => {
@@ -53,8 +53,8 @@
     const options = [];
     for (const target of reserveTargets({ anyDie: true })) {
       reserve.pools.right.forEach((value, index) => {
-        if (value === null || dieMaximum(value, 'right') < target.difficulty) return;
-        const energy = reserveStat('right') + value < target.difficulty ? 1 : 0;
+        if (value === null || dieMaximum(value, 'right') < target.difficulty - 1) return;
+        const energy = reserveStat('right') + value < target.difficulty - 1 ? 1 : 0;
         const quality = risky
           ? distance(target.cell, opponent) * 3 + value - energy
           : -energy * 6 - value * 2 - target.difficulty + distance(target.cell, opponent) * .25;
@@ -141,7 +141,7 @@
           }
           lines.push(`Tria el dau ${reserve.selected.right + 1}: ${chosenDie() > 0 ? '+' : ''}${chosenDie()}. Aquest dau queda gastat.`);
           updateHitButtons();
-          handleHit();
+          handleHit({ deferResolution: true });
         }
         const hit = hitStateByPlayer.right;
         if (hit && !hit.resolved) {
@@ -149,7 +149,7 @@
           if (negativeServe(hit)) lines.push('El −1 és falta de servei obligatòria i no es pot corregir amb energia.');
           let spent = 0;
           while (canRescueHit(hit, 'right') && spent < 4) {
-            handleRemoveMinus({ currentTarget: { closest: () => document.querySelector('.player-card[data-player="right"]') } });
+            handleRemoveMinus({ deferResolution: true, currentTarget: { closest: () => document.querySelector('.player-card[data-player="right"]') } });
             spent++;
           }
           lines.push(spent ? `Gasta ${spent} d’energia per anul·lar ${spent} dau(s) negatiu(s). Total final: ${rollDataFromRolls(hit.rolls).total + hit.statValue}.` : 'No gasta energia per millorar la tirada.');

@@ -37,7 +37,7 @@ function returning({ pool = [-1,0,1,1], energy = 1, difficulty = 2 } = {}) {
 
 test('dragging a legal volley target preserves reachability and allows the energy rescue in both views', () => {
   for (const view of ['horizontal', 'vertical']) {
-    const state = returning({ difficulty: 2, energy: 2, pool: [-1,0,1,1] });
+    const state = returning({ difficulty: 3, energy: 2, pool: [-1,0,1,1] });
     state.playerPositions.left = { left: '42%', top: '25%' };
     state.playerCards[0].stats[3] = '3';
     const { context: c, document: d } = client(state);
@@ -47,7 +47,7 @@ test('dragging a legal volley target preserves reachability and allows the energ
     c.setCourtOrientation(view);
     c.attemptVolley();
     c.selectReserveDie(0);
-    assert.equal(c.getGameState().ballValue, 3);
+    assert.equal(c.getGameState().ballValue, 4);
     assert.equal(c.getGameState().playerCards[0].energy, '1');
     const target = { col: 5, row: 0 };
     assert.equal(c.canPlaceReserveBall(target), true);
@@ -97,6 +97,49 @@ test('reserve edition is isolated; each shot consumes exactly the selected die',
   assert.deepEqual(plain(context.getGameState()),state);
 });
 
+test('only a rescuable negative die opens Colpeig; all other shots resolve automatically', () => {
+  for (const die of [-1,0,1]) {
+    const state = returning({ difficulty: 3, pool: [die,0,1,1], energy: 1 });
+    const { context:c, document:d } = client(state);
+    assert.equal(d.getElementById('reserve-hit-panel').hidden,true);
+    c.selectReserveDie(0); c.placeShotBall({col:5,row:0}); c.handleHit();
+    assert.equal(d.getElementById('reserve-hit-panel').hidden,die!==-1);
+    if (die===-1) {
+      assert.equal(c.getGameState().turn.phase,'return');
+      c.handleRemoveMinus({currentTarget:{closest:()=>d.querySelector('.player-card[data-player="left"]')}});
+      assert.equal(d.getElementById('reserve-hit-panel').hidden,true);
+      assert.equal(c.getGameState().playerCards[0].energy,'0');
+    }
+    assert.equal(c.getGameState().turn.phase,'reposition');
+  }
+  const {context:c,document:d}=client(returning({difficulty:2,pool:[-1,0,1,1],energy:1}));
+  c.selectReserveDie(0); c.placeShotBall({col:5,row:0}); c.handleHit();
+  assert.equal(c.getGameState().turn.phase,'reposition','a negative die already valid needs no panel');
+  assert.equal(c.getGameState().playerCards[0].energy,'1');
+  assert.equal(d.getElementById('reserve-hit-panel').hidden,true);
+});
+
+test('lost point preserves the board and survives reload; only confirmation advances the shared game once', () => {
+  const state=returning({pool:[-1,-1,-1,-1],energy:0,difficulty:5});
+  const {context:c}=client(state);
+  c.settleReserveTurn();
+  const paused=plain(c.getGameState());
+  assert.deepEqual(paused.ballPosition,state.ballPosition);
+  assert.deepEqual(paused.reserve.pools,state.reserve.pools);
+  assert.equal(paused.ballValue,5);
+  assert.match(paused.reserve.notice,/Millor resultat possible: 1/);
+  const restored=client(paused);
+  assert.equal(restored.document.getElementById('reserve-point-end').hidden,false);
+  for(const type of ['hit','resolve','removeMinus','move','volley','selectDie']) {
+    assert.throws(()=>runGame(paused,{type,index:0}));
+  }
+  const next=runGame(paused,{type:'nextPoint'});
+  assert.equal(next.score.right.points,1);
+  assert.equal(next.reserve.pendingLoss,null);
+  assert.equal(next.turn.phase,'serve');
+  assert.throws(()=>runGame(next,{type:'nextPoint'}));
+});
+
 test('second serve retains dice; a new point refreshes both reserves', () => {
   let state = runGame(null,null);
   state.reserve.pools.left = [-1,0,1,1];
@@ -105,13 +148,13 @@ test('second serve retains dice; a new point refreshes both reserves', () => {
   state = runGame(state,{type:'serveDifficulty',value:9});
   state = runGame(state,{type:'selectDie',index:0});
   state = runGame(state,{type:'hit'});
-  state = runGame(state,{type:'resolve'});
   assert.equal(state.turn.serveAttempt,2);
   assert.deepEqual(state.reserve.pools.left,[null,0,1,1]);
   assert.deepEqual(state.reserve.pools.right,right);
   state = runGame(state,{type:'selectDie',index:1});
   state = runGame(state,{type:'hit'});
-  state = runGame(state,{type:'resolve'});
+  assert.equal(state.turn.phase,'point-ended');
+  state = runGame(state,{type:'nextPoint'});
   assert.equal(state.score.right.points,1);
   assert.equal(state.reserve.pools.left.filter(v=>v!==null).length,4);
   assert.equal(state.reserve.pools.right.filter(v=>v!==null).length,4);
@@ -143,19 +186,19 @@ test('destinations follow current position penalties and selected die, including
   assert.equal(at(4,0).difficulty,3);
   assert.equal(at(3,0).difficulty,4);
   assert.equal(at(5,0).available,true,'negative die may use one energy to reach 2');
-  assert.equal(at(5,1).available,false,'a result one below difficulty is no longer valid');
+  assert.equal(at(5,1).available,true,'one below difficulty is valid with energy');
   assert.equal(at(3,0).available,false);
   let selected = runGame(state,{type:'selectDie',index:0});
   assert.throws(()=>runGame(selected,{type:'placeBall',cell:{col:3,row:0}}));
-  selected = runGame(selected,{type:'placeBall',cell:{col:5,row:0}});
+  selected = runGame(selected,{type:'placeBall',cell:{col:5,row:1}});
   selected = runGame(selected,{type:'hit'});
   selected = runGame(selected,{type:'removeMinus'});
   assert.equal(selected.playerCards[0].energy,'0');
   assert.equal(selected.hitStateByPlayer.left.rolls[0],0);
-  assert.equal(runGame(selected,{type:'resolve'}).turn.phase,'reposition');
+  assert.equal(selected.turn.phase,'reposition');
   c.selectReserveDie(2);
   targets = plain(c.reserveTargets());
-  assert.equal(at(3,0).available,false);
+  assert.equal(at(3,0).available,true);
   assert.equal(at(4,0).available,true);
   c.placeShotBall({col:4,row:0});
   c.selectReserveDie(0);
@@ -170,9 +213,12 @@ test('no legal target loses exactly one point, but a bad selection does not', ()
   assert.equal(c.getGameState().score.right.points,0,'other dice can still save the ball');
   const impossible = returning({pool:[-1,-1,-1,-1],energy:0,difficulty:4});
   c.restoreGame(impossible); c.settleReserveTurn();
-  assert.equal(c.getGameState().score.right.points,1);
+  assert.equal(c.getGameState().score.right.points,0);
+  assert.equal(c.getGameState().turn.phase,'point-ended');
+  assert.deepEqual(plain(c.getGameState().ballPosition),impossible.ballPosition);
   assert.match(c.getGameState().reserve.notice,/cap casella/);
   c.settleReserveTurn();
+  c.continueReservePoint(); c.continueReservePoint();
   assert.equal(c.getGameState().score.right.points,1);
 });
 
@@ -182,7 +228,9 @@ test('movement costs are applied before determining if any return is possible', 
   assert.throws(()=>runGame(state,{type:'move'}));
   state.playerCards[0].energy='2';
   const result = runGame(state,{type:'move'});
-  assert.equal(result.score.right.points,1);
+  assert.equal(result.score.right.points,0);
+  assert.equal(result.turn.phase,'point-ended');
+  assert.equal(runGame(result,{type:'nextPoint'}).score.right.points,1);
   assert.equal(result.playerCards[0].energy,'0');
   assert.match(result.reserve.notice,/cap casella/);
 });
@@ -220,7 +268,8 @@ test('shared reserve rooms use their own rules and reject cross-edition access',
     const hit=await call(path+'/actions',{revision:1,action:{type:'hit'}});
     assert.equal(hit.status,200);
     const snapshot=await hit.json();
-    assert.equal(snapshot.state.hitStateByPlayer.left.rolls.length,1);
+    if (room.state.reserve.pools.left[0] === -1) assert.equal(snapshot.state.turn.serveAttempt,2);
+    else assert.equal(snapshot.state.hitStateByPlayer.left.rolls.length,1);
     assert.equal(snapshot.state.reserve.pools.left[0],null);
     assert.equal((await call(path+'/actions',{revision:1,action:{type:'hit'}})).status,409);
     const old=await (await call('/api/rooms',{token})).json();
@@ -228,38 +277,37 @@ test('shared reserve rooms use their own rules and reject cross-edition access',
   } finally {db.close();}
 });
 
-test('negative serves are always faults, consume the die and forbid energy even with high skill', () => {
+test('negative serves resolve automatically without energy, double fault waits for confirmation', () => {
   let state=runGame(null,null);
   state.reserve.pools.left=[-1,-1,0,1];
   state.playerCards[0].stats[0]='4';
   for (const index of [0,1]) {
     state=runGame(state,{type:'selectDie',index});
     state=runGame(state,{type:'hit'});
-    assert.equal(state.hitStateByPlayer.left.originalDie,-1);
-    const {context,document}=client(state);
-    assert.equal(document.getElementById('hit-panel-remove').hidden,true);
-    context.handleRemoveMinus({currentTarget:{closest:()=>document.querySelector('.player-card[data-player="left"]')}});
-    assert.equal(context.getGameState().playerCards[0].energy,'5');
+    assert.equal(state.playerCards[0].energy,'5');
     assert.throws(()=>runGame(state,{type:'removeMinus'}));
-    state=runGame(state,{type:'resolve'});
     if(index===0) {
       assert.equal(state.turn.serveAttempt,2);
       assert.deepEqual(state.reserve.pools.left,[null,-1,0,1]);
     }
   }
+  assert.equal(state.turn.phase,'point-ended');
+  assert.equal(state.score.right.points,0);
+  assert.match(state.reserve.notice,/Doble falta/);
+  state=runGame(state,{type:'nextPoint'});
   assert.equal(state.score.right.points,1);
-  assert.equal(state.playerCards[0].energy,'5');
   assert.deepEqual(state.reserve.fatigue,{left:0,right:0});
 });
 
-test('all return types must equal difficulty; equal succeeds and one below loses', () => {
-  for (const statName of ['Restada','General','Voleia']) for (const total of [2,3]) {
+test('all returns allow one below difficulty; two below pauses the lost point', () => {
+  for (const statName of ['Restada','General','Voleia']) for (const total of [1,2,3]) {
     const state=returning({difficulty:3,energy:0});
     state.turn.hitReady=true; state.turn.ballPlaced=true; state.lastHitSide='left';
     state.hitStateByPlayer.left={statName,statValue:2,rolls:[total-2],originalDie:total-2,resolved:false,forcedError:false,outcome:''};
     const result=runGame(state,{type:'resolve'});
-    assert.equal(result.score.right.points,total===2?1:0);
-    if(total===3) { assert.equal(result.turn.phase,'reposition'); assert.equal(result.ballValue,3); }
+    assert.equal(result.score.right.points,0);
+    if(total>=2) { assert.equal(result.turn.phase,'reposition'); assert.equal(result.ballValue,total); }
+    else { assert.equal(result.turn.phase,'point-ended'); assert.equal(runGame(result,{type:'nextPoint'}).score.right.points,1); }
   }
 });
 

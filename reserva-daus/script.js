@@ -389,10 +389,7 @@ function distanceToBall(side) {
 }
 
 function awardPointForUnreachableBall() {
-  const pointWinner = oppositeSide(turn.activeSide);
-  awardPoint(pointWinner);
-  updateScoreUI();
-  resetCourtAfterPoint();
+  pauseLostPoint(`No arriba a la pilota: calen ${movementCost()} d’energia i en té ${energyForPlayer(turn.activeSide)}.`);
 }
 
 function movementCost() {
@@ -467,10 +464,7 @@ function renounceMovement() {
   if (window.multiplayer?.dispatch('renounce')) return;
   if (movementDialog.open) movementDialog.close();
   recoverPlayerEnergy(turn.activeSide, 1);
-  const pointWinner = oppositeSide(turn.activeSide);
-  awardPoint(pointWinner);
-  updateScoreUI();
-  resetCourtAfterPoint();
+  pauseLostPoint('Renuncia a arribar a la pilota i recupera 1 d’energia, fins al màxim.');
 }
 
 function updateTurnUI() {
@@ -484,7 +478,10 @@ function updateTurnUI() {
   serveDifficultyControlEl.hidden = turn.phase !== 'serve';
   updateServeDifficultyControls();
 
-  if (matchWinner()) {
+  if (reserve.pendingLoss) {
+    turnStatusEl.textContent = 'Punt acabat';
+    turnHintEl.textContent = reserve.notice;
+  } else if (matchWinner()) {
     turnStatusEl.textContent = `Partida acabada · Guanya ${getPlayerLabel(matchWinner())}`;
     turnHintEl.textContent = 'Prem Nova partida per tornar a jugar.';
   } else if (turn.phase === 'reposition') {
@@ -506,7 +503,7 @@ function updateTurnUI() {
   } else if (turn.phase === 'serve') {
     turnHintEl.textContent = `${label}: la pilota és a la posició del rival. Pots millorar el cop o resoldre.`;
   } else {
-    turnHintEl.textContent = `${label}: pots ajustar la posició de la pilota o resoldre el colpeig.`;
+    turnHintEl.textContent = `${label}: converteix el −1 en 0 gastant 1 d’energia per salvar el cop. El destí està fixat.`;
   }
 
   playerLeftEl.classList.toggle('active-player', turn.activeSide === 'left');
@@ -514,7 +511,7 @@ function updateTurnUI() {
   playerCards.forEach((card) => {
     card.classList.toggle('active-card', card.dataset.player === turn.activeSide);
   });
-  moveToBallBtn.hidden = turn.phase === 'reposition' || turn.phase === 'serve' || turn.ballPlaced || playerCanReachBall(turn.activeSide);
+  moveToBallBtn.hidden = turn.phase !== 'return' || turn.ballPlaced || playerCanReachBall(turn.activeSide);
   moveToBallBtn.disabled = moveToBallBtn.hidden || Boolean(matchWinner());
   attemptVolleyBtn.hidden = !canAttemptVolley();
   attemptVolleyBtn.disabled = attemptVolleyBtn.hidden;
@@ -574,6 +571,7 @@ function beginTurn(side, phase = 'return', serveAttempt = 1, returningServe = fa
 }
 
 function startDrag(event) {
+  if (reserve.pendingLoss) return;
   if (window.computer?.ownsTurn()) return;
   if (window.multiplayer?.active && !window.multiplayer.canAct()) return;
   if (matchWinner()) return;
@@ -790,7 +788,14 @@ function updatePointButtons() {
 }
 
 function updateHitButtons() {
-  const canHit = !matchWinner() && turn.phase !== 'reposition' && !turn.hitReady && (
+  // Allow an old saved game to finish a shot that used to require Resoldre.
+  const pending = lastHitSide && hitStateByPlayer[lastHitSide];
+  if (!reserve.pendingLoss && turn.hitReady && pending && !pending.resolved && !canRescueHit(pending, lastHitSide)) {
+    hitActionBtn.disabled = false;
+    hitActionBtn.textContent = 'Continuar el cop pendent';
+    return;
+  }
+  const canHit = !matchWinner() && !reserve.pendingLoss && ['serve', 'return'].includes(turn.phase) && !turn.hitReady && (
     (turn.phase === 'serve' && playerCanReachBall(turn.activeSide)) ||
     (turn.phase !== 'serve' && turn.ballPlaced)
   );
@@ -992,7 +997,12 @@ function rollFourFate() {
   };
 }
 
-function handleHit() {
+function handleHit({ deferResolution = false } = {}) {
+  const pending = lastHitSide && hitStateByPlayer[lastHitSide];
+  if (!reserve.pendingLoss && turn.hitReady && pending && !pending.resolved && !canRescueHit(pending, lastHitSide)) {
+    resolveHit();
+    return;
+  }
   if (window.multiplayer?.dispatch('hit')) return;
   const playerSide = turn.activeSide;
   const playerCard = document.querySelector(`.player-card[data-player="${playerSide}"]`);
@@ -1049,6 +1059,7 @@ function handleHit() {
   updateHitButtons();
   updateTurnUI();
   animateHitDice();
+  if (!deferResolution && !canRescueHit(state, playerSide)) resolveHit();
 }
 
 function resetPlayersToInitialPositions() {
@@ -1129,6 +1140,7 @@ function handleRemoveMinus(event) {
   if (lastHitSide === playerSide) {
     updateHitPanelForPlayer(playerSide);
   }
+  if (!event.deferResolution) resolveHit();
 }
 
 function startSecondServe() {
@@ -1161,14 +1173,12 @@ function resolveHit() {
   if (turn.phase === 'serve' && (negativeServe(state) || total < requiredTotal)) {
     state.resolved = true;
     if (turn.serveAttempt === 1) {
+      reserve.notice = negativeServe(state) ? 'Primera falta: el dau −1 és falta de servei. Prepara el segon servei.' : `Primera falta: resultat ${total}, mínim ${requiredTotal}. Prepara el segon servei.`;
       startSecondServe();
       return;
     }
 
-    const pointWinner = oppositeSide(lastHitSide);
-    awardPoint(pointWinner);
-    updateScoreUI();
-    resetCourtAfterPoint();
+    pauseLostPoint(negativeServe(state) ? 'Doble falta: el dau −1 és falta de servei i no es pot corregir amb energia.' : `Doble falta: resultat ${total}, mínim necessari ${requiredTotal}.`, lastHitSide);
     return;
   }
 
@@ -1181,10 +1191,7 @@ function resolveHit() {
     }
 
     state.resolved = true;
-    const pointWinner = oppositeSide(lastHitSide);
-    awardPoint(pointWinner);
-    updateScoreUI();
-    resetCourtAfterPoint();
+    pauseLostPoint(`Resultat ${total}; cal almenys ${requiredTotal} (dificultat ${ballValue} − 1). Amb els daus i l’energia disponibles només pot arribar a ${bestPossibleTotal}.`, lastHitSide);
     return;
   }
 
@@ -1483,6 +1490,7 @@ hitPanelRemoveBtn.addEventListener('click', () => {
 });
 
 hitPanelResolveBtn.addEventListener('click', resolveHit);
+document.getElementById('reserve-next-point').addEventListener('click', continueReservePoint);
 moveToBallBtn.addEventListener('click', openMovementDialog);
 attemptVolleyBtn.addEventListener('click', attemptVolley);
 movementConfirmBtn.addEventListener('click', acceptMovement);
