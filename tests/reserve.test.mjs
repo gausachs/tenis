@@ -9,6 +9,23 @@ import { handleAPI } from '../server/api.mjs';
 import { createLocalDB } from '../server/local-db.mjs';
 
 const plain = value => JSON.parse(JSON.stringify(value));
+
+test('pending energy improvement can be declined or conceded locally and online', () => {
+  const {context:c}=client(returning({difficulty:3,energy:1}));
+  c.selectReserveDie(0); c.placeShotBall({col:5,row:0}); c.handleHit();
+  const pending=plain(c.getGameState());
+  c.handleHit();
+  assert.equal(c.getGameState().turn.phase,'reposition');
+  assert.equal(c.getGameState().ballValue,1);
+  assert.equal(c.getGameState().playerCards[0].energy,'1');
+  const shared=runGame(pending,{type:'resolve'});
+  assert.equal(shared.ballValue,1);
+  assert.equal(shared.playerCards[0].energy,'1');
+  const conceded=runGame(pending,{type:'concedeHit'});
+  assert.equal(conceded.turn.phase,'point-ended');
+  assert.equal(conceded.playerCards[0].energy,'1');
+  assert.equal(runGame(conceded,{type:'nextPoint'}).score.right.points,1);
+});
 function client(state = runGame(null, null), random = 0.8) {
   const document = createGameDOM(), stored = new Map(), timers = [];
   const context = vm.createContext({ document, URLSearchParams,
@@ -369,7 +386,7 @@ test('all returns allow one below difficulty; two below pauses the lost point', 
     const result=runGame(state,{type:'resolve'});
     assert.equal(result.score.right.points,0);
     if(total>=2) { assert.equal(result.turn.phase,'reposition'); assert.equal(result.ballValue,total); }
-    else { assert.equal(result.turn.phase,'point-ended'); assert.equal(runGame(result,{type:'nextPoint'}).score.right.points,1); }
+    else { assert.equal(result.turn.phase,'reposition'); assert.equal(result.ballValue,total); }
   }
 });
 

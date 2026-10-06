@@ -136,6 +136,14 @@ function continueReservePoint() {
   saveGame();
 }
 
+function concedeReserveHit() {
+  if (window.multiplayer?.dispatch('concedeHit')) return;
+  const pending = lastHitSide && hitStateByPlayer[lastHitSide];
+  if (reserve.pendingLoss || !turn.hitReady || !canRescueHit(pending, lastHitSide)) return;
+  pending.resolved = true;
+  pauseLostPoint('Cedeix el punt i conserva l’energia.', lastHitSide);
+}
+
 function settleReserveTurn() {
   if (turn.phase !== 'return' || turn.hitReady) return;
   if (!turn.ballPlaced && !playerCanReachBall(turn.activeSide)) {
@@ -160,6 +168,7 @@ function renderReserve() {
   document.getElementById('reserve-next-point').disabled = Boolean(window.multiplayer?.active && !window.multiplayer.canAct());
   const computerTurn = window.computer?.ownsTurn();
   const onlineLocked = window.multiplayer?.active && !window.multiplayer.canAct();
+  document.getElementById('reserve-concede-hit').disabled = Boolean(computerTurn || onlineLocked || !canRescueHit(pendingHit, lastHitSide));
   for (const side of ['left', 'right']) {
     const box = document.getElementById(`reserve-${side}`);
     box.replaceChildren();

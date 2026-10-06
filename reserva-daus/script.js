@@ -785,9 +785,9 @@ function updatePointButtons() {
 function updateHitButtons() {
   // Allow an old saved game to finish a shot that used to require Resoldre.
   const pending = lastHitSide && hitStateByPlayer[lastHitSide];
-  if (!reserve.pendingLoss && turn.hitReady && pending && !pending.resolved && !canRescueHit(pending, lastHitSide)) {
+  if (!reserve.pendingLoss && turn.hitReady && pending && !pending.resolved) {
     hitActionBtn.disabled = false;
-    hitActionBtn.textContent = 'Continuar el cop pendent';
+    hitActionBtn.textContent = canRescueHit(pending, lastHitSide) ? 'Resoldre sense gastar energia' : 'Continuar el cop pendent';
     return;
   }
   const canHit = !matchWinner() && !reserve.pendingLoss && ['serve', 'return'].includes(turn.phase) && !turn.hitReady && (
@@ -833,9 +833,9 @@ function updateReturnRescue(state, side) {
   const requiredTotal = requiredHitTotal(state, side);
   state.forcedError = bestTotal < requiredTotal;
   state.outcome = state.forcedError
-    ? 'Tir erroni: no hi ha prou energia o daus negatius per salvar-lo. Prem Resoldre.'
+    ? 'Cop baix: pots perdre el punt o acceptar aquest valor més baix. No cal gastar energia.'
     : total < requiredTotal
-      ? `Pots salvar el cop gastant ${requiredTotal - total} d’energia per treure daus '−'.`
+      ? `Opcional: pots gastar ${requiredTotal - total} d’energia per millorar-lo, o resoldre sense energia i acceptar una pilota de valor ${total}.`
       : '';
 }
 
@@ -994,7 +994,7 @@ function rollFourFate() {
 
 function handleHit({ deferResolution = false } = {}) {
   const pending = lastHitSide && hitStateByPlayer[lastHitSide];
-  if (!reserve.pendingLoss && turn.hitReady && pending && !pending.resolved && !canRescueHit(pending, lastHitSide)) {
+  if (!reserve.pendingLoss && turn.hitReady && pending && !pending.resolved) {
     resolveHit();
     return;
   }
@@ -1174,15 +1174,18 @@ function resolveHit() {
   }
 
   if (total < requiredTotal) {
-    if (!state.forcedError && bestPossibleTotal >= requiredTotal) {
-      const improvementsNeeded = requiredTotal - total;
-      state.outcome = `El cop encara es pot salvar: cal treure ${improvementsNeeded} dau(s) '-' gastant energia.`;
-      updateHitPanelForPlayer(lastHitSide);
-      return;
-    }
-
+    const couldImprove = canRescueHit(state, lastHitSide);
     state.resolved = true;
-    pauseLostPoint(`Resultat ${total}; cal almenys ${requiredTotal} (dificultat ${ballValue} − 1). Amb els daus i l’energia disponibles només pot arribar a ${bestPossibleTotal}.`, lastHitSide);
+    state.outcome = couldImprove
+      ? `Cop acceptat sense gastar energia: la pilota baixa a ${total}. Podies millorar-la fins a ${requiredTotal}.`
+      : `Cop acceptat: la pilota baixa a ${total}.`;
+    ballValue = total;
+    renderBallValue();
+    ballMemory.previousShotRow = turn.currentShotRow;
+    updateHitPanelForPlayer(lastHitSide);
+    turn.phase = 'reposition';
+    updateHitButtons();
+    updateTurnUI();
     return;
   }
 
@@ -1479,6 +1482,7 @@ hitPanelRemoveBtn.addEventListener('click', () => {
 });
 
 hitPanelResolveBtn.addEventListener('click', resolveHit);
+document.getElementById('reserve-concede-hit').addEventListener('click', concedeReserveHit);
 document.getElementById('reserve-next-point').addEventListener('click', continueReservePoint);
 moveToBallBtn.addEventListener('click', openMovementDialog);
 attemptVolleyBtn.addEventListener('click', attemptVolley);

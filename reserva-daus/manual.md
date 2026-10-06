@@ -120,7 +120,7 @@ Una casella de dificultat 4 exigeix un total mínim de 3: és possible amb el da
 
 Escull el dau i el destí vàlid, suma l’habilitat i marca el dau com a gastat. No hi ha una tirada nova en aquest moment. Un cop jugat el dau, ja no pots canviar el destí ni substituir el dau.
 
-En una devolució, si cal convertir el −1 en 0 per arribar a dificultat − 1 i salvar el cop, paga 1 d’energia i resol. Només es permet gastar aquesta energia quan salva un cop que, sense la millora, fallaria. No pots gastar-la per reforçar un cop que ja és vàlid, ni per salvar-ne un que continuaria sent impossible. **Aquesta millora està prohibida al servei: el −1 sempre és falta.**
+En una devolució, si cal convertir el −1 en 0 per arribar a dificultat − 1 i millorar el cop, pots pagar 1 d’energia. És opcional: també pots resoldre sense gastar energia i acceptar el valor més baix que has obtingut, o perdre el punt. No pots gastar energia al servei.
 
 En una devolució vàlida, **el total final es converteix en el nou valor de la pilota**. Actualitza el marcador de fila amb la fila d’origen del teu cop, no amb la del destí.
 

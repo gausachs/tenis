@@ -61,6 +61,7 @@ await writeFile(new URL('../.generated/game-engine.mjs', import.meta.url), prefi
 const reserveRules = await readFile(new URL('../reserva-daus/reserve.js', import.meta.url), 'utf8');
 const reserveSource = await readFile(new URL('../reserva-daus/script.js', import.meta.url), 'utf8');
 const reserveSuffix = suffix
+  .replace("case 'resolve':", "case 'concedeHit': requireRule(turn.hitReady && canRescueHit(pendingHit, turn.activeSide)); concedeReserveHit(); break; case 'resolve':")
   .replace("requireRule(!matchWinner());", "requireRule(!matchWinner()); requireRule(!reserve.pendingLoss || action.type === 'nextPoint');")
   .replace("case 'serveDifficulty':", "case 'nextPoint': requireRule(Boolean(reserve.pendingLoss)); continueReservePoint(); break; case 'serveDifficulty':")
   .replace("case 'serveDifficulty':", `case 'selectDie':
