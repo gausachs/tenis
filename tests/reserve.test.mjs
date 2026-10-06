@@ -18,7 +18,7 @@ test('pending energy improvement can be declined or conceded locally and online'
   assert.equal(c.getGameState().turn.phase,'reposition');
   assert.equal(c.getGameState().ballValue,1);
   assert.equal(c.getGameState().playerCards[0].energy,'1');
-  const shared=runGame(pending,{type:'resolve'});
+  const shared=runGame(structuredClone(pending),{type:'resolve'});
   assert.equal(shared.ballValue,1);
   assert.equal(shared.playerCards[0].energy,'1');
   const conceded=runGame(pending,{type:'concedeHit'});
